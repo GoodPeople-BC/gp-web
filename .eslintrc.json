@@ -4,12 +4,7 @@
     "browser": true,
     "es2021": true
   },
-  "plugins": [
-    "@typescript-eslint",
-    "@emotion",
-    "prettier",
-    "simple-import-sort"
-  ],
+  "plugins": ["@typescript-eslint", "@emotion", "prettier"],
   "extends": [
     "react-app",
     "react-app/jest",
@@ -54,20 +49,10 @@
     "@typescript-eslint/triple-slash-reference": "off",
     "comma-dangle": "off",
     "react/prop-types": "off",
+    "@typescript-eslint/no-unused-vars": "warn",
     "@typescript-eslint/consistent-type-assertions": "off",
     "@typescript-eslint/naming-convention": "off",
     "@typescript-eslint/explicit-function-return-type": "off",
-    "@typescript-eslint/no-misused-promises": "off",
-    "@typescript-eslint/no-unused-vars": [
-      "warn",
-      {
-        "varsIgnorePattern": "^_",
-        "args": "all",
-        "argsIgnorePattern": "^_",
-        "caughtErrors": "all"
-      }
-    ],
-    "simple-import-sort/imports": "warn",
-    "simple-import-sort/exports": "warn"
+    "@typescript-eslint/no-misused-promises": "off"
   }
 }
