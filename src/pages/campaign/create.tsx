@@ -1,41 +1,92 @@
+/** @jsxImportSource @emotion/react */
+import BaseInput from '../../components/Form/BaseInput'
+import { css } from '@emotion/react'
 import styled from '@emotion/styled'
+
+import { SubmitHandler, useForm } from 'react-hook-form'
+
+import { addCampaign } from '../../api/CampaignAPI'
+
+type Inputs = {
+  title: string
+  description: string
+  writerAddress: string
+  img1: FileList
+  img2: FileList
+  img3: FileList
+}
 
 // 기부안건등록페이지
 const CampaignCreate = () => {
-  const handleSubmit = (e: any) => {
-    e.preventDefault()
-    const title = e.target[0].value
-    const description = e.target[1].value
-    const writerAddress = e.target[2].value
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<Inputs>({
+    defaultValues: {
+      title: '',
+      description: '',
+      writerAddress: '',
+      img1: undefined,
+      img2: undefined,
+      img3: undefined,
+    },
+  })
 
-    if (e.target[3].files) {
-      const formData = new FormData()
-      for (let i = 0; i < e.target[3].files.length; i++) {
-        formData.append('images', e.target[3].files[i])
-      }
-      console.log(
-        '🚀 ~ file: create.tsx:10 ~ handleSubmit ~ formData',
-        formData
-      )
-    }
-    // formData api 요청 헤더 형식
-    // headers: {
-    //   "Content-Type": "multipart/form-data",
-    // },
+  const onSubmit: SubmitHandler<Inputs> = async (data) => {
+    const formData = new FormData()
+    formData.append('title', data.title)
+    formData.append('description', data.description)
+    formData.append('writerAddress', data.writerAddress)
+    formData.append('img1', data.img1[0])
+    formData.append('img2', data.img2[0])
+    formData.append('img3', data.img3[0])
+
+    await addCampaign(formData).catch((err) => {
+      alert(err)
+    })
   }
-  return (
-    <Form onSubmit={handleSubmit}>
-      <label htmlFor='title'>title</label>
-      <input id=' title' type='text' />
-      <label htmlFor='description'>description</label>
-      <textarea id='description' />
 
-      {/* 이후 지갑연동 address로 대체 */}
-      <label htmlFor='writerAddress'>writerAddress</label>
-      <input id='writerAddress' type='text' />
-      <label htmlFor='images'>images</label>
-      <input id='images' type='file' multiple />
-      <button type='submit'>제출</button>
+  return (
+    <Form onSubmit={handleSubmit(onSubmit)}>
+      <BaseInput
+        name='title'
+        type='text'
+        label='title'
+        register={register('title')}
+      />
+      <BaseInput
+        name='description'
+        type='text'
+        label='description'
+        register={register('description')}
+      />
+      <BaseInput
+        name='writerAddress'
+        type='text'
+        label='writerAddress'
+        register={register('writerAddress')}
+      />
+      <BaseInput
+        name='img1'
+        type='file'
+        label='Image 1'
+        register={register('img1')}
+      />
+      <BaseInput
+        name='img2'
+        type='file'
+        label='Image 2'
+        register={register('img2')}
+      />
+      <BaseInput
+        name='img3'
+        type='file'
+        label='Image 3'
+        register={register('img3')}
+      />
+
+      <input type='submit' />
     </Form>
   )
 }
@@ -43,7 +94,15 @@ const CampaignCreate = () => {
 export default CampaignCreate
 
 const Form = styled.form`
-  width: 300px;
+  width: 100vw;
+  height: 100vh;
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  align-items: center;
+`
+
+const Box = styled.div`
+  width: 100px;
+  margin-bottom: 1rem;
 `
