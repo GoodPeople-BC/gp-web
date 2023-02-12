@@ -6,6 +6,10 @@ import styled from '@emotion/styled'
 import { SubmitHandler, useForm } from 'react-hook-form'
 
 import { addCampaign } from '../../api/CampaignAPI'
+import { ethers } from 'ethers'
+import { Contract } from '../../utils/Contract'
+import { Input } from '@mui/material'
+import { LoadingButton } from '@mui/lab'
 
 type Inputs = {
   title: string
@@ -44,7 +48,22 @@ const CampaignCreate = () => {
 
     await addCampaign(formData).catch((err) => {
       alert(err)
+      return null
     })
+
+    // call contract
+
+    const provider = await Contract.getProvider()
+    // calculate gas price
+    const price = ethers.utils.formatUnits(
+      (await provider.getGasPrice()).mul(2),
+      'gwei'
+    )
+    const options = {
+      gasPrice: ethers.utils.parseUnits(price, 'gwei'),
+    }
+
+    // contract call
   }
 
   return (
@@ -86,7 +105,13 @@ const CampaignCreate = () => {
         register={register('img3')}
       />
 
-      <input type='submit' />
+      <LoadingButton
+        variant='contained'
+        sx={{ mt: 3, color: '#ffffff', fontWeight: 'bold', fontSize: '1.1rem' }}
+        type='submit'
+      >
+        Submit
+      </LoadingButton>
     </Form>
   )
 }

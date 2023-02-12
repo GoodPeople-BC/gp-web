@@ -6,15 +6,20 @@ import reportWebVitals from './reportWebVitals'
 import { BrowserRouter } from 'react-router-dom'
 import { Global } from '@emotion/react'
 import globalStyle from './styles/global'
+import { QueryClient, QueryClientProvider } from 'react-query'
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
+const queryClient = new QueryClient()
+
 root.render(
   <>
     <Global styles={globalStyle} />
     <React.StrictMode>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </QueryClientProvider>
     </React.StrictMode>
   </>
 )

@@ -1,4 +1,5 @@
 import styled from '@emotion/styled'
+import { Box, FilledInput, Input, TextField } from '@mui/material'
 import {
   Control,
   FieldError,
@@ -25,15 +26,28 @@ export default function BaseInput<T extends FieldValues>({
   errors,
 }: BaseInputProps<T>) {
   return (
-    <Box>
-      <label>{label}</label>
-      <input id={`form-${name}-${label}`} type={type} {...register} />
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        p: 1,
+      }}
+    >
+      {type === 'text' ? (
+        <TextField
+          id={`form-${name}-${label}`}
+          type={type}
+          label={label}
+          {...register}
+        />
+      ) : (
+        <>
+          <label>{label}</label>
+          <Input id={`form-${name}-${label}`} type={type} {...register} />
+        </>
+      )}
       {errors?.message}
     </Box>
   )
 }
-
-const Box = styled.div`
-  width: 100px;
-  margin-bottom: 1rem;
-`

@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { IGetMetadataByNameResp } from './interface'
 
 export interface IAddCampaign {
   title: string
@@ -24,4 +25,18 @@ export const addReview = async (name: string, formData: FormData) => {
       },
     }
   )
+}
+
+export const getMetadataByName = async (
+  name: string
+): Promise<IGetMetadataByNameResp> => {
+  return await axios
+    .get(`${process.env.REACT_APP_API_SERVER}/campaign/${name}`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    .then(({ data }) => {
+      return data.data.metadata
+    })
 }

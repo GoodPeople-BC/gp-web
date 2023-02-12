@@ -4,6 +4,10 @@ import { SubmitHandler, useForm } from 'react-hook-form'
 
 import { addReview } from '../../api/CampaignAPI'
 import BaseInput from '../../components/Form/BaseInput'
+import { useMemo } from 'react'
+import { useMetadataByName } from '../../hook/query/campaign'
+import { IGetMetadataByNameResp } from '../../api/interface'
+import { LoadingButton } from '@mui/lab'
 
 type Inputs = {
   contents: string
@@ -17,6 +21,15 @@ const CampaignDetail = () => {
   // 기부글 등록 시 리턴된 unique key로 기부 상세 dynamic routing
   // /campaign/${uniqueKey}로 접속하여 테스트 가능
   const { id } = useParams()
+
+  // useQuery
+  const { data, isLoading } = useMetadataByName(
+    '914d6bcb01bc7f57530478780329041'
+  )
+  // useMemo
+  const metadata: IGetMetadataByNameResp | undefined = useMemo(() => {
+    return data
+  }, [data])
 
   const {
     register,
@@ -34,48 +47,63 @@ const CampaignDetail = () => {
   console.log('🚀 ~ file: detail.tsx:5 ~ CampaignDetail ~ id', id)
 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
-    console.log(data)
     const formData = new FormData()
     formData.append('contents', data.contents)
     formData.append('img1', data.img1[0])
     formData.append('img2', data.img2[0])
     formData.append('img3', data.img3[0])
 
+    // TODO params 로 입력 받기
     await addReview('914d6bcb01bc7f57530478780329041', formData).catch(
       (err) => {
         alert(err)
       }
     )
   }
-  return (
-    <Form onSubmit={handleSubmit(onSubmit)}>
-      <BaseInput
-        name='contents'
-        type='text'
-        label='contets'
-        register={register('contents')}
-      />
-      <BaseInput
-        name='img1'
-        type='file'
-        label='Image 1'
-        register={register('img1')}
-      />
-      <BaseInput
-        name='img2'
-        type='file'
-        label='Image 2'
-        register={register('img2')}
-      />
-      <BaseInput
-        name='img3'
-        type='file'
-        label='Image 3'
-        register={register('img3')}
-      />
 
-      <input type='submit' />
-    </Form>
+  return (
+    <>
+      <Form onSubmit={handleSubmit(onSubmit)}>
+        <BaseInput
+          name='contents'
+          type='text'
+          label='contets'
+          register={register('contents')}
+        />
+        <BaseInput
+          name='img1'
+          type='file'
+          label='Image 1'
+          register={register('img1')}
+        />
+        <BaseInput
+          name='img2'
+          type='file'
+          label='Image 2'
+          register={register('img2')}
+        />
+        <BaseInput
+          name='img3'
+          type='file'
+          label='Image 3'
+          register={register('img3')}
+        />
+
+        <LoadingButton
+          variant='contained'
+          sx={{
+            mt: 3,
+            color: '#ffffff',
+            fontWeight: 'bold',
+            fontSize: '1.1rem',
+          }}
+          type='submit'
+        >
+          Submit
+        </LoadingButton>
+      </Form>
+      <div>{metadata?.img1}</div>
+    </>
   )
 }
 
