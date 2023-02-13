@@ -1,18 +1,13 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
-
-import CampaignDetail from './pages/CampaignDetail'
-import Home from './pages/Home'
+import Header from './components/common/Header'
+import routes from './router'
+import RouteIndex from './router/RouterIndex'
 
 function App() {
   return (
-    <div className='App'>
-      <BrowserRouter>
-        <Routes>
-          <Route path='/' element={<Home />} />
-          <Route path='/campaign/:id' element={<CampaignDetail />} />
-        </Routes>
-      </BrowserRouter>
-    </div>
+    <>
+      <Header />
+      <RouteIndex routes={routes} />
+    </>
   )
 }
 
