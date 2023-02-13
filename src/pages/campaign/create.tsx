@@ -1,6 +1,5 @@
 /** @jsxImportSource @emotion/react */
-import BaseInput from '../../components/Form/BaseInput'
-import { css } from '@emotion/react'
+import BaseInput, { InputType } from '../../components/Form/BaseInput'
 import styled from '@emotion/styled'
 
 import { SubmitHandler, useForm } from 'react-hook-form'
@@ -8,15 +7,8 @@ import { SubmitHandler, useForm } from 'react-hook-form'
 import { addCampaign } from '../../api/CampaignAPI'
 import { ethers } from 'ethers'
 import { Contract } from '../../utils/Contract'
-import {
-  FormControl,
-  FormControlLabel,
-  FormLabel,
-  Input,
-  Radio,
-  RadioGroup,
-} from '@mui/material'
 import { LoadingButton } from '@mui/lab'
+import BaseRadioGroup from '../../components/Form/BaseRadioGroup'
 
 type Inputs = {
   title: string
@@ -28,6 +20,94 @@ type Inputs = {
   img2: FileList
   img3: FileList
 }
+
+type InputsKey = keyof Inputs
+
+interface IRadioValue {
+  label: string
+  value: string
+}
+
+interface ICreateCampaignForm {
+  name: InputsKey
+  type: InputType | 'radio'
+  label: string
+  radioDatas?: IRadioValue[]
+  defaultValue?: string
+}
+
+const createCampaignForm: ICreateCampaignForm[] = [
+  {
+    name: 'title',
+    type: 'text',
+    label: 'title',
+  },
+  {
+    name: 'description',
+    type: 'text',
+    label: 'description',
+  },
+  {
+    name: 'writerAddress',
+    type: 'text',
+    label: 'writerAddress',
+  },
+  {
+    label: 'goalAmount',
+    name: 'goalAmount',
+    type: 'radio',
+    radioDatas: [
+      {
+        label: '10$',
+        value: '10',
+      },
+      {
+        label: '100$',
+        value: '100',
+      },
+      {
+        label: '1000$',
+        value: '1000',
+      },
+    ],
+    defaultValue: '10',
+  },
+  {
+    label: 'period',
+    name: 'period',
+    type: 'radio',
+    radioDatas: [
+      {
+        label: '2 weeks',
+        value: '0',
+      },
+      {
+        label: '1 Month',
+        value: '1',
+      },
+      {
+        label: '2 Months',
+        value: '2',
+      },
+    ],
+    defaultValue: '0',
+  },
+  {
+    name: 'img1',
+    type: 'file',
+    label: 'Image 1',
+  },
+  {
+    name: 'img2',
+    type: 'file',
+    label: 'Image 2',
+  },
+  {
+    name: 'img3',
+    type: 'file',
+    label: 'Image 3',
+  },
+]
 
 // 기부안건등록페이지
 const CampaignCreate = () => {
@@ -80,99 +160,28 @@ const CampaignCreate = () => {
 
   return (
     <Form onSubmit={handleSubmit(onSubmit)}>
-      <BaseInput
-        name='title'
-        type='text'
-        label='title'
-        register={register('title')}
-      />
-      <BaseInput
-        name='description'
-        type='text'
-        label='description'
-        register={register('description')}
-      />
-      <BaseInput
-        name='writerAddress'
-        type='text'
-        label='writerAddress'
-        register={register('writerAddress')}
-      />
-      <FormControl>
-        <FormLabel id='radio-group-goal-label'>Goal</FormLabel>
-        <RadioGroup
-          row
-          aria-labelledby='radio-group-goal-label'
-          defaultValue='10'
-          name='radio-group-goal'
-        >
-          <FormControlLabel
-            value='10'
-            control={<Radio />}
-            label='10$'
-            {...register('goalAmount')}
+      {createCampaignForm.map((data) =>
+        data.type !== 'radio' ? (
+          <BaseInput
+            name={data.name}
+            type={data.type as InputType}
+            label={data.label}
+            register={register(data.name as InputsKey)}
           />
-          <FormControlLabel
-            value='100'
-            control={<Radio />}
-            label='100$'
-            {...register('goalAmount')}
-          />
-          <FormControlLabel
-            value='1000'
-            control={<Radio />}
-            label='1000$'
-            {...register('goalAmount')}
-          />
-        </RadioGroup>
-      </FormControl>
-      <FormControl>
-        <FormLabel id='radio-group-period-label'>Period</FormLabel>
-        <RadioGroup
-          row
-          aria-labelledby='radio-group-period-label'
-          defaultValue='0'
-          name='radio-group-period'
-        >
-          <FormControlLabel
-            value='0'
-            control={<Radio />}
-            label='2 weeks'
-            {...register('period')}
-          />
-          <FormControlLabel
-            value='1'
-            control={<Radio />}
-            label='1 Month'
-            {...register('period')}
-          />
-          <FormControlLabel
-            value='2'
-            control={<Radio />}
-            label='3 Month'
-            {...register('period')}
-          />
-        </RadioGroup>
-      </FormControl>
-      <BaseInput
-        name='img1'
-        type='file'
-        label='Image 1'
-        register={register('img1')}
-      />
-      <BaseInput
-        name='img2'
-        type='file'
-        label='Image 2'
-        register={register('img2')}
-      />
-      <BaseInput
-        name='img3'
-        type='file'
-        label='Image 3'
-        register={register('img3')}
-      />
-
+        ) : (
+          data.radioDatas && (
+            <BaseRadioGroup
+              name={data.name}
+              label={data.label}
+              defaultValue={
+                data.defaultValue ? data.defaultValue : data.radioDatas[0].value
+              }
+              radioDatas={data.radioDatas}
+              register={register(data.name as InputsKey)}
+            />
+          )
+        )
+      )}
       <LoadingButton
         variant='contained'
         sx={{ mt: 3, color: '#ffffff', fontWeight: 'bold', fontSize: '1.1rem' }}

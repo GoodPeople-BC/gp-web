@@ -3,7 +3,7 @@ import { useParams } from 'react-router'
 import { SubmitHandler, useForm } from 'react-hook-form'
 
 import { addReview } from '../../api/CampaignAPI'
-import BaseInput from '../../components/Form/BaseInput'
+import BaseInput, { InputType } from '../../components/Form/BaseInput'
 import { useMemo } from 'react'
 import { useMetadataByName } from '../../hook/query/campaign'
 import { IGetMetadataByNameResp } from '../../api/interface'
@@ -15,6 +15,42 @@ type Inputs = {
   img2: FileList
   img3: FileList
 }
+
+type InputsKey = keyof Inputs
+
+interface IRadioValue {
+  label: string
+  value: string
+}
+
+interface IDetaileForm {
+  name: InputsKey
+  type: InputType
+  label: string
+}
+
+const defailForm: IDetaileForm[] = [
+  {
+    name: 'contents',
+    type: 'text',
+    label: 'contents',
+  },
+  {
+    name: 'img1',
+    type: 'file',
+    label: 'Image 1',
+  },
+  {
+    name: 'img2',
+    type: 'file',
+    label: 'Image 2',
+  },
+  {
+    name: 'img3',
+    type: 'file',
+    label: 'Image 3',
+  },
+]
 
 // 기부 상세 페이지 (후기 작성)
 const CampaignDetail = () => {
@@ -64,31 +100,14 @@ const CampaignDetail = () => {
   return (
     <>
       <Form onSubmit={handleSubmit(onSubmit)}>
-        <BaseInput
-          name='contents'
-          type='text'
-          label='contets'
-          register={register('contents')}
-        />
-        <BaseInput
-          name='img1'
-          type='file'
-          label='Image 1'
-          register={register('img1')}
-        />
-        <BaseInput
-          name='img2'
-          type='file'
-          label='Image 2'
-          register={register('img2')}
-        />
-        <BaseInput
-          name='img3'
-          type='file'
-          label='Image 3'
-          register={register('img3')}
-        />
-
+        {defailForm.map((data) => (
+          <BaseInput
+            name={data.name}
+            type={data.type as InputType}
+            label={data.label}
+            register={register(data.name as InputsKey)}
+          />
+        ))}
         <LoadingButton
           variant='contained'
           sx={{

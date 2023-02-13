@@ -8,7 +8,7 @@ import {
   UseFormRegisterReturn,
 } from 'react-hook-form'
 
-type InputType = 'file' | 'text'
+export type InputType = 'file' | 'text'
 
 interface BaseInputProps<T extends FieldValues> {
   register: UseFormRegisterReturn
