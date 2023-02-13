@@ -32,6 +32,7 @@ export default function BaseInput<T extends FieldValues>({
         flexDirection: 'column',
         justifyContent: 'center',
         p: 1,
+        width: '25rem',
       }}
     >
       {type === 'text' ? (
