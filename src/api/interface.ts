@@ -6,6 +6,7 @@ export interface IGetMetadataByNameResp {
   title: string
   description: string
   writerAddress: string
+  imgs: string[]
   img1?: string
   img1Key?: string
   img2?: string
@@ -23,10 +24,7 @@ export interface IGetMetadataByNameResp {
 export interface IGetMetadataResp {
   name: string
   keyvalues: {
-    img1: string
     title: string
-    img1Key: string
-    description: string
-    writerAddress: string
+    mainImg: string
   }
 }

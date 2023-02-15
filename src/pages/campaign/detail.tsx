@@ -138,13 +138,13 @@ const CampaignDetail = () => {
               marginRight: '10px',
             }}
           >
-            {[metadata?.img1, metadata?.img2, metadata?.img3].map(
-              (step, index) => (
+            {metadata &&
+              metadata.imgs.map((o, index) => (
                 <div key={index}>
                   {Math.abs(activeStep - index) <= 2 ? (
                     <Box
                       component='img'
-                      src={metadata?.img1}
+                      src={o}
                       sx={{
                         backgroundSize: 'contain',
                         backgroundPosition: 'center center',
@@ -155,8 +155,7 @@ const CampaignDetail = () => {
                     />
                   ) : null}
                 </div>
-              )
-            )}
+              ))}
           </AutoPlaySwipeableViews>
         )}
         <Box width={400}>

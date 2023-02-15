@@ -88,14 +88,11 @@ const CampaignCreate = () => {
     formData.append('img1', data.img1[0])
     data.img2 && formData.append('img2', data.img2[0])
     data.img3 && formData.append('img3', data.img3[0])
-    console.log(data.period, 'period')
-    console.log(data.goalAmount, 'goalAmount')
 
     // * ipfs write
     addCampaign(formData)
       .then((res) => {
         // * contract transact
-        // todo: args0, args1 사용자 입력값으로 대체
         addDonationProposal(
           data.goalAmount,
           data.period,

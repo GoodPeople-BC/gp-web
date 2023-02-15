@@ -35,7 +35,7 @@ const HomePage = () => {
                 <Box
                   sx={{
                     borderRadius: 2,
-                    backgroundImage: `url(${o.keyvalues?.img1})`,
+                    backgroundImage: `url(${o.keyvalues?.mainImg})`,
                     backgroundPosition: 'center center',
                     backgroundSize: 'cover',
                     height: '300px',
