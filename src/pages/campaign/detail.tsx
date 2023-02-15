@@ -4,13 +4,14 @@ import { SubmitHandler, useForm } from 'react-hook-form'
 
 import { addReview } from '../../api/CampaignAPI'
 import BaseInput, { InputType } from '../../components/Form/BaseInput'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useMetadataByName } from '../../hook/query/campaign'
 import { IGetMetadataByNameResp } from '../../api/interface'
 import { LoadingButton } from '@mui/lab'
 import { Box, Skeleton, Typography, useTheme } from '@mui/material'
 import { autoPlay } from 'react-swipeable-views-utils'
 import SwipeableViews from 'react-swipeable-views'
+import { getDonationBykey } from '../../api/contract/GPService'
 
 type Inputs = {
   contents: string
@@ -67,7 +68,6 @@ const CampaignDetail = () => {
 
   // useQuery
   const { data, isLoading } = useMetadataByName(id as string)
-  console.log('🚀 ~ file: detail.tsx:70 ~ CampaignDetail ~ data', data)
   // useMemo
   const metadata: IGetMetadataByNameResp | undefined = useMemo(() => {
     return data
@@ -114,6 +114,10 @@ const CampaignDetail = () => {
   const handleStepChange = (step: number) => {
     setActiveStep(step)
   }
+
+  useEffect(() => {
+    id && getDonationBykey(id).then((res) => console.log('res,', res))
+  }, [id])
 
   return (
     <>

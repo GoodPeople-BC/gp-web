@@ -11,11 +11,11 @@ const HomePage = () => {
   useEffect(() => {
     getDonationList().then(console.log)
   }, [])
+
   const { data: metadata, isLoading } = useMetadata([
     '305a8bb4cbde1e9320a9b6faadd0edd',
     '2529626d990f402ff4b3f772dfa46e3',
   ])
-  console.log('🚀 ~ file: index.tsx:13 ~ HomePage ~ data', metadata)
 
   return (
     <>

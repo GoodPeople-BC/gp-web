@@ -41,6 +41,12 @@ export const getDonationList = async () => {
   return donationList
 }
 
+export const getDonationBykey = async (id: string) => {
+  const ServiceContract = await getServiceContract()
+  const donationBykey = ServiceContract.getDonationBykey(id)
+  return donationBykey
+}
+
 export const addDonationProposal = async (
   amount: string,
   period: string,
