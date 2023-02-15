@@ -1,3 +1,7 @@
+export interface IAddCampaignResp {
+  id: string
+}
+
 export interface IGetMetadataByNameResp {
   title: string
   description: string
@@ -14,4 +18,15 @@ export interface IGetMetadataByNameResp {
   reviewImg2Key?: string
   reviewImg3?: string
   reviewImg3Key?: string
+}
+
+export interface IGetMetadataResp {
+  name: string
+  keyvalues: {
+    img1: string
+    title: string
+    img1Key: string
+    description: string
+    writerAddress: string
+  }
 }

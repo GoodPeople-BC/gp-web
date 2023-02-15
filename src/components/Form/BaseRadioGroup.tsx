@@ -18,13 +18,13 @@ interface BaseRadioGroupProps {
   label: string
   name: string
   radioDatas: RadioData[]
-  defaultValue: string
+  defaultValue: string | number
   errors?: FieldError
 }
 
 interface RadioData {
   label: string
-  value: string
+  value: string | number
 }
 
 export default function BaseRadioGroup({
@@ -42,7 +42,7 @@ export default function BaseRadioGroup({
         flexDirection: 'column',
         justifyContent: 'center',
         p: 1,
-        width: '25rem',
+        width: { xs: '100%', md: '25rem' },
       }}
     >
       <FormControl>
@@ -56,7 +56,7 @@ export default function BaseRadioGroup({
           {radioDatas.map((data) => (
             <FormControlLabel
               value={data.value}
-              control={<Radio />}
+              control={<Radio size='small' />}
               label={data.label}
               {...register}
             />

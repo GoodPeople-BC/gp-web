@@ -1,7 +1,14 @@
-import { getMetadataByName } from '../../api/CampaignAPI'
+import {
+  addCampaign,
+  getMetadata,
+  getMetadataByName,
+} from '../../api/CampaignAPI'
 
-import { useQuery } from 'react-query'
+import { useMutation, useQuery } from 'react-query'
 
 export function useMetadataByName(name: string) {
   return useQuery('getMetadataByName', () => getMetadataByName(name))
+}
+export function useMetadata() {
+  return useQuery('getMetadata', () => getMetadata())
 }

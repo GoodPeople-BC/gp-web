@@ -4,113 +4,64 @@ import styled from '@emotion/styled'
 
 import { SubmitHandler, useForm } from 'react-hook-form'
 
-import { addCampaign } from '../../api/CampaignAPI'
+import { addCampaign, cancelCampaign } from '../../api/CampaignAPI'
 import { ethers } from 'ethers'
 import { Contract } from '../../utils/Contract'
 import { LoadingButton } from '@mui/lab'
 import BaseRadioGroup from '../../components/Form/BaseRadioGroup'
+import { useRecoilValue } from 'recoil'
+import { accountState } from '../../atom'
+import {
+  addDonationProposal,
+  getTargetAmounts,
+  getTargetPeriods,
+} from '../../api/contract/GPService'
+import { useEffect, useState } from 'react'
 
-type Inputs = {
+interface Inputs {
   title: string
   description: string
   writerAddress: string
   goalAmount: string
   period: string
   img1: FileList
-  img2: FileList
-  img3: FileList
+  img2?: FileList
+  img3?: FileList
 }
 
 type InputsKey = keyof Inputs
 
 interface IRadioValue {
   label: string
-  value: string
+  value: string | number
 }
 
 interface ICreateCampaignForm {
   name: InputsKey
   type: InputType | 'radio'
   label: string
+  multiline?: boolean
+  required?: boolean
   radioDatas?: IRadioValue[]
-  defaultValue?: string
+  defaultValue?: string | number
 }
 
-const createCampaignForm: ICreateCampaignForm[] = [
-  {
-    name: 'title',
-    type: 'text',
-    label: 'title',
-  },
-  {
-    name: 'description',
-    type: 'text',
-    label: 'description',
-  },
-  {
-    name: 'writerAddress',
-    type: 'text',
-    label: 'writerAddress',
-  },
-  {
-    label: 'goalAmount',
-    name: 'goalAmount',
-    type: 'radio',
-    radioDatas: [
-      {
-        label: '10$',
-        value: '10',
-      },
-      {
-        label: '100$',
-        value: '100',
-      },
-      {
-        label: '1000$',
-        value: '1000',
-      },
-    ],
-    defaultValue: '10',
-  },
-  {
-    label: 'period',
-    name: 'period',
-    type: 'radio',
-    radioDatas: [
-      {
-        label: '2 weeks',
-        value: '0',
-      },
-      {
-        label: '1 Month',
-        value: '1',
-      },
-      {
-        label: '2 Months',
-        value: '2',
-      },
-    ],
-    defaultValue: '0',
-  },
-  {
-    name: 'img1',
-    type: 'file',
-    label: 'Image 1',
-  },
-  {
-    name: 'img2',
-    type: 'file',
-    label: 'Image 2',
-  },
-  {
-    name: 'img3',
-    type: 'file',
-    label: 'Image 3',
-  },
-]
-
-// 기부안건등록페이지
 const CampaignCreate = () => {
+  // * periods, amounts preset
+  const [periods, setPeriods] = useState<number[]>([0, 0, 0])
+  const [amounts, setAmounts] = useState<number[]>([0, 0, 0])
+
+  useEffect(() => {
+    getTargetPeriods().then((res) => setPeriods(res))
+    getTargetAmounts().then((res) => setAmounts(res))
+  }, [])
+
+  // * [api] addCampaign react query
+
+  // * metamask address
+  const account = useRecoilValue(accountState)
+
+  // * react hook form settings
   const {
     register,
     handleSubmit,
@@ -127,84 +78,171 @@ const CampaignCreate = () => {
       img3: undefined,
     },
   })
-
+  // * handle form submission
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
+    // * create formData
     const formData = new FormData()
     formData.append('title', data.title)
     formData.append('description', data.description)
-    formData.append('writerAddress', data.writerAddress)
+    formData.append('writerAddress', account)
     formData.append('img1', data.img1[0])
-    formData.append('img2', data.img2[0])
-    formData.append('img3', data.img3[0])
+    data.img2 && formData.append('img2', data.img2[0])
+    data.img3 && formData.append('img3', data.img3[0])
+    console.log(data.period, 'period')
+    console.log(data.goalAmount, 'goalAmount')
 
-    console.log(data)
-
-    await addCampaign(formData).catch((err) => {
-      alert(err)
-      return null
-    })
-
-    // call contract
-    const provider = await Contract.getProvider()
-    // calculate gas price
-    const price = ethers.utils.formatUnits(
-      (await provider.getGasPrice()).mul(2),
-      'gwei'
-    )
-    const options = {
-      gasPrice: ethers.utils.parseUnits(price, 'gwei'),
-    }
-
-    // contract call
+    // * ipfs write
+    addCampaign(formData)
+      .then((res) => {
+        // * contract transact
+        // todo: args0, args1 사용자 입력값으로 대체
+        addDonationProposal(
+          data.goalAmount,
+          data.period,
+          account,
+          res.pinataKey
+        )
+          .then(console.log)
+          .catch(() =>
+            cancelCampaign(res.pinataKey).then(console.log).catch(console.error)
+          )
+      })
+      .catch((err) => {
+        alert(err)
+        return null
+      })
   }
 
+  const createCampaignForm: ICreateCampaignForm[] = [
+    {
+      label: 'Campaign Title',
+      name: 'title',
+      type: 'text',
+    },
+    {
+      label: 'Campaign Description',
+      name: 'description',
+      type: 'text',
+      multiline: true,
+    },
+    {
+      label: 'Writer Address',
+      name: 'writerAddress',
+      type: 'text',
+    },
+    {
+      label: 'Goal Amount',
+      name: 'goalAmount',
+      type: 'radio',
+      radioDatas: [
+        {
+          label: `${amounts[0] / 10 ** 6} USDC`,
+          value: amounts[0],
+        },
+        {
+          label: `${amounts[1] / 10 ** 6} USDC`,
+          value: amounts[1],
+        },
+        {
+          label: `${(amounts[2] / 10 ** 6).toLocaleString('en')} USDC`,
+          value: amounts[2],
+        },
+      ],
+      defaultValue: 10000000,
+    },
+    {
+      label: 'Period',
+      name: 'period',
+      type: 'radio',
+      radioDatas: [
+        {
+          label: `${periods[0] / 24 / 60 / 60 / 7} weeks`,
+          value: periods[0],
+        },
+        {
+          label: `${periods[1] / 24 / 60 / 60 / 7} weeks`,
+          value: periods[1],
+        },
+        {
+          label: `${periods[2] / 24 / 60 / 60 / 7} weeks`,
+          value: periods[2],
+        },
+      ],
+      defaultValue: 1209600,
+    },
+    {
+      name: 'img1',
+      type: 'file',
+      label: 'Image 1',
+      required: true,
+    },
+    {
+      name: 'img2',
+      type: 'file',
+      label: 'Image 2',
+    },
+    {
+      name: 'img3',
+      type: 'file',
+      label: 'Image 3',
+    },
+  ]
+
   return (
-    <Form onSubmit={handleSubmit(onSubmit)}>
-      {createCampaignForm.map((data) =>
-        data.type !== 'radio' ? (
-          <BaseInput
-            name={data.name}
-            type={data.type as InputType}
-            label={data.label}
-            register={register(data.name as InputsKey)}
-          />
-        ) : (
-          data.radioDatas && (
-            <BaseRadioGroup
+    <>
+      {/* img1 required */}
+      <Form onSubmit={handleSubmit(onSubmit)}>
+        {createCampaignForm.map((data) =>
+          data.type !== 'radio' ? (
+            <BaseInput
+              key={data.label}
               name={data.name}
+              type={data.type as InputType}
+              value={data.name === 'writerAddress' ? account : undefined}
               label={data.label}
-              defaultValue={
-                data.defaultValue ? data.defaultValue : data.radioDatas[0].value
-              }
-              radioDatas={data.radioDatas}
+              multiline={data.multiline || false}
               register={register(data.name as InputsKey)}
             />
+          ) : (
+            data.radioDatas && (
+              <BaseRadioGroup
+                key={data.label}
+                name={data.name}
+                label={data.label}
+                defaultValue={
+                  data.defaultValue
+                    ? data.defaultValue
+                    : data.radioDatas[0].value
+                }
+                radioDatas={data.radioDatas}
+                register={register(data.name as InputsKey)}
+              />
+            )
           )
-        )
-      )}
-      <LoadingButton
-        variant='contained'
-        sx={{ mt: 3, color: '#ffffff', fontWeight: 'bold', fontSize: '1.1rem' }}
-        type='submit'
-      >
-        Submit
-      </LoadingButton>
-    </Form>
+        )}
+        <LoadingButton
+          variant='contained'
+          sx={{
+            mt: 3,
+            color: '#ffffff',
+            fontWeight: 'bold',
+            fontSize: '1.1rem',
+          }}
+          type='submit'
+        >
+          Submit
+        </LoadingButton>
+      </Form>
+    </>
   )
 }
 
 export default CampaignCreate
 
 const Form = styled.form`
-  width: 100vw;
-  height: 100vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-`
-
-const Box = styled.div`
-  width: 100px;
-  margin-bottom: 1rem;
+  font-size: 14px;
 `

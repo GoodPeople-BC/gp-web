@@ -4,10 +4,13 @@ import { SubmitHandler, useForm } from 'react-hook-form'
 
 import { addReview } from '../../api/CampaignAPI'
 import BaseInput, { InputType } from '../../components/Form/BaseInput'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useMetadataByName } from '../../hook/query/campaign'
 import { IGetMetadataByNameResp } from '../../api/interface'
 import { LoadingButton } from '@mui/lab'
+import { Box, Skeleton, Typography, useTheme } from '@mui/material'
+import { autoPlay } from 'react-swipeable-views-utils'
+import SwipeableViews from 'react-swipeable-views'
 
 type Inputs = {
   contents: string
@@ -27,6 +30,7 @@ interface IDetaileForm {
   name: InputsKey
   type: InputType
   label: string
+  multiline?: boolean
 }
 
 const defailForm: IDetaileForm[] = [
@@ -34,6 +38,7 @@ const defailForm: IDetaileForm[] = [
     name: 'contents',
     type: 'text',
     label: 'contents',
+    multiline: true,
   },
   {
     name: 'img1',
@@ -53,15 +58,15 @@ const defailForm: IDetaileForm[] = [
 ]
 
 // 기부 상세 페이지 (후기 작성)
+const AutoPlaySwipeableViews = autoPlay(SwipeableViews)
+
 const CampaignDetail = () => {
   // 기부글 등록 시 리턴된 unique key로 기부 상세 dynamic routing
   // /campaign/${uniqueKey}로 접속하여 테스트 가능
   const { id } = useParams()
 
   // useQuery
-  const { data, isLoading } = useMetadataByName(
-    '914d6bcb01bc7f57530478780329041'
-  )
+  const { data, isLoading } = useMetadataByName(id as string)
   // useMemo
   const metadata: IGetMetadataByNameResp | undefined = useMemo(() => {
     return data
@@ -80,8 +85,6 @@ const CampaignDetail = () => {
     },
   })
 
-  console.log('🚀 ~ file: detail.tsx:5 ~ CampaignDetail ~ id', id)
-
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     const formData = new FormData()
     formData.append('contents', data.contents)
@@ -90,24 +93,93 @@ const CampaignDetail = () => {
     formData.append('img3', data.img3[0])
 
     // TODO params 로 입력 받기
-    await addReview('914d6bcb01bc7f57530478780329041', formData).catch(
-      (err) => {
-        alert(err)
-      }
-    )
+    await addReview(id as string, formData).catch((err) => {
+      alert(err)
+    })
+  }
+
+  const [activeStep, setActiveStep] = useState(0)
+  const theme = useTheme()
+
+  const maxSteps = 3
+
+  const handleNext = () => {
+    setActiveStep((prevActiveStep) => prevActiveStep + 1)
+  }
+
+  const handleBack = () => {
+    setActiveStep((prevActiveStep) => prevActiveStep - 1)
+  }
+
+  const handleStepChange = (step: number) => {
+    setActiveStep(step)
   }
 
   return (
     <>
+      <Box sx={{ display: 'flex', margin: '0 auto' }}>
+        {isLoading ? (
+          <Skeleton
+            variant='rectangular'
+            width={250}
+            height={250}
+            sx={{ borderRadius: 2 }}
+          />
+        ) : (
+          <AutoPlaySwipeableViews
+            interval={3000}
+            autoPlay={false}
+            axis={theme.direction === 'rtl' ? 'x-reverse' : 'x'}
+            index={activeStep}
+            onChangeIndex={handleStepChange}
+            enableMouseEvents
+            style={{
+              width: '250px',
+              marginRight: '10px',
+            }}
+          >
+            {[metadata?.img1, metadata?.img2, metadata?.img3].map(
+              (step, index) => (
+                <div key={index}>
+                  {Math.abs(activeStep - index) <= 2 ? (
+                    <Box
+                      component='img'
+                      src={metadata?.img1}
+                      sx={{
+                        backgroundSize: 'contain',
+                        backgroundPosition: 'center center',
+                        borderRadius: 2,
+                      }}
+                      width={250}
+                      height={250}
+                    />
+                  ) : null}
+                </div>
+              )
+            )}
+          </AutoPlaySwipeableViews>
+        )}
+        <Box width={400}>
+          <Typography>{metadata?.writerAddress}</Typography>
+          <Typography variant='h6'>{metadata?.title}</Typography>
+          <p>{metadata?.description}</p>
+        </Box>
+      </Box>
+      <Box sx={{ display: 'flex', margin: '0 auto' }}>
+        <div>{metadata?.reviewContents}</div>
+      </Box>
       <Form onSubmit={handleSubmit(onSubmit)}>
         {defailForm.map((data) => (
           <BaseInput
+            key={data.label}
             name={data.name}
             type={data.type as InputType}
             label={data.label}
+            multiline={data.multiline || false}
             register={register(data.name as InputsKey)}
           />
         ))}
+        {/* // TODO 체크박스 */}
         <LoadingButton
           variant='contained'
           sx={{
@@ -121,7 +193,6 @@ const CampaignDetail = () => {
           Submit
         </LoadingButton>
       </Form>
-      <div>{metadata?.img1}</div>
     </>
   )
 }
@@ -129,14 +200,8 @@ const CampaignDetail = () => {
 export default CampaignDetail
 
 const Form = styled.form`
-  width: 100vw;
-  height: 100vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-`
-const Box = styled.div`
-  width: 100px;
-  margin-bottom: 1rem;
 `

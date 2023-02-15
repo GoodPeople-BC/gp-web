@@ -1,5 +1,9 @@
 import axios from 'axios'
-import { IGetMetadataByNameResp } from './interface'
+import {
+  IGetMetadataResp,
+  IGetMetadataByNameResp,
+  IAddCampaignResp,
+} from './interface'
 
 export interface IAddCampaign {
   title: string
@@ -8,11 +12,22 @@ export interface IAddCampaign {
 }
 
 export const addCampaign = async (formData: FormData) => {
-  await axios.post(`${process.env.REACT_APP_API_SERVER}/campaign`, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  })
+  const data = await axios.post(
+    `${process.env.REACT_APP_API_SERVER}/campaign`,
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  )
+  return data.data.data
+}
+
+export const cancelCampaign = (pinataKey: string) => {
+  return axios.post(
+    `${process.env.REACT_APP_API_SERVER}/campaign/${pinataKey}/cancel`
+  )
 }
 
 export const addReview = async (name: string, formData: FormData) => {
@@ -36,6 +51,14 @@ export const getMetadataByName = async (
         'Content-Type': 'application/json',
       },
     })
+    .then(({ data }) => {
+      return data.data.metadata
+    })
+}
+
+export const getMetadata = async (): Promise<IGetMetadataResp[]> => {
+  return await axios
+    .get(`${process.env.REACT_APP_API_SERVER}/campaign`)
     .then(({ data }) => {
       return data.data.metadata
     })

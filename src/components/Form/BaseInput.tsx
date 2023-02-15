@@ -1,7 +1,5 @@
-import styled from '@emotion/styled'
-import { Box, FilledInput, Input, TextField } from '@mui/material'
+import { Box, Input, TextField } from '@mui/material'
 import {
-  Control,
   FieldError,
   FieldValues,
   Path,
@@ -14,7 +12,10 @@ interface BaseInputProps<T extends FieldValues> {
   register: UseFormRegisterReturn
   name: Path<T>
   type: InputType
+  value?: string
   label: string
+  multiline: boolean
+  required?: boolean
   errors?: FieldError
 }
 
@@ -22,7 +23,10 @@ export default function BaseInput<T extends FieldValues>({
   register,
   name,
   type,
+  value,
   label,
+  multiline,
+  required,
   errors,
 }: BaseInputProps<T>) {
   return (
@@ -32,20 +36,29 @@ export default function BaseInput<T extends FieldValues>({
         flexDirection: 'column',
         justifyContent: 'center',
         p: 1,
-        width: '25rem',
+        width: { xs: '100%', md: '25rem' },
       }}
     >
-      {type === 'text' ? (
+      {type !== 'file' ? (
         <TextField
+          required
           id={`form-${name}-${label}`}
           type={type}
           label={label}
+          value={value}
+          multiline={multiline}
+          rows={multiline ? 5 : 1}
           {...register}
         />
       ) : (
         <>
           <label>{label}</label>
-          <Input id={`form-${name}-${label}`} type={type} {...register} />
+          <Input
+            required={required}
+            id={`form-${name}-${label}`}
+            type={type}
+            {...register}
+          />
         </>
       )}
       {errors?.message}
