@@ -67,6 +67,7 @@ const CampaignDetail = () => {
 
   // useQuery
   const { data, isLoading } = useMetadataByName(id as string)
+  console.log('🚀 ~ file: detail.tsx:70 ~ CampaignDetail ~ data', data)
   // useMemo
   const metadata: IGetMetadataByNameResp | undefined = useMemo(() => {
     return data
@@ -92,7 +93,6 @@ const CampaignDetail = () => {
     formData.append('img2', data.img2[0])
     formData.append('img3', data.img3[0])
 
-    // TODO params 로 입력 받기
     await addReview(id as string, formData).catch((err) => {
       alert(err)
     })

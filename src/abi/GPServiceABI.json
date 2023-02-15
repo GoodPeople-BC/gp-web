@@ -258,6 +258,256 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "donationId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getDonation",
+    "outputs": [
+      {
+        "components": [
+          {
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "donateId",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "proposalId",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "voteFor",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "voteAgainst",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "createdTime",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "period",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "canVote",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct GPService.DonationBaseInfo",
+            "name": "add",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "donateId",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "proposalId",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "voteFor",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "voteAgainst",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "createdTime",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "period",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "canVote",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct GPService.DonationBaseInfo",
+            "name": "abort",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bool",
+            "name": "hasAbort",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "currentAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "ipfsKey",
+            "type": "string"
+          }
+        ],
+        "internalType": "struct GPService.DonationInfo",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "key",
+        "type": "string"
+      }
+    ],
+    "name": "getDonationBykey",
+    "outputs": [
+      {
+        "components": [
+          {
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "donateId",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "proposalId",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "voteFor",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "voteAgainst",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "createdTime",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "period",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "canVote",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct GPService.DonationBaseInfo",
+            "name": "add",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "donateId",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "proposalId",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "voteFor",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "voteAgainst",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "createdTime",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "period",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "canVote",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct GPService.DonationBaseInfo",
+            "name": "abort",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bool",
+            "name": "hasAbort",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "currentAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "ipfsKey",
+            "type": "string"
+          }
+        ],
+        "internalType": "struct GPService.DonationInfo",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "getDonationList",
     "outputs": [
