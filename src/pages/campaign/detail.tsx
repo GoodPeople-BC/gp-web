@@ -1,7 +1,7 @@
 import styled from '@emotion/styled'
 import { useParams } from 'react-router'
 import { SubmitHandler, useForm } from 'react-hook-form'
-
+import { BigNumber } from '@ethersproject/bignumber'
 import { addReview } from '../../api/CampaignAPI'
 import BaseInput, { InputType } from '../../components/Form/BaseInput'
 import { useEffect, useMemo, useState } from 'react'
@@ -64,10 +64,11 @@ const AutoPlaySwipeableViews = autoPlay(SwipeableViews)
 const CampaignDetail = () => {
   // 기부글 등록 시 리턴된 unique key로 기부 상세 dynamic routing
   // /campaign/${uniqueKey}로 접속하여 테스트 가능
-  const { id } = useParams()
+  const { id, account } = useParams()
 
   // useQuery
   const { data, isLoading } = useMetadataByName(id as string)
+
   // useMemo
   const metadata: IGetMetadataByNameResp | undefined = useMemo(() => {
     return data
@@ -114,9 +115,97 @@ const CampaignDetail = () => {
   const handleStepChange = (step: number) => {
     setActiveStep(step)
   }
+  const [donation, setDonation] = useState<IDonation>()
+
+  interface IRawVote {
+    canVote: BigNumber
+    createdTime: BigNumber
+    donateId: BigNumber
+    proposalId: BigNumber
+    voteFor: BigNumber
+    voteAgainst: BigNumber
+    period: BigNumber
+  }
+
+  enum GovernanceStatus {
+    Vote, // add 투표중
+    Idle, // 기부 가능 상태
+    Aborted, // 신고당해서 취소되었음
+    Completed, // 기부금 수령해감
+  }
+
+  enum DonationStatus {
+    Waiting, // 시작 시간에 도달 못함
+    Proceeding, // 투표중
+    Succeeded, // 시간 내에 투표 목표 달성
+    Failed, // 시간 내에 투표 목표 미달성
+    Completed, // 투표 목표 달성하여 기부금 수령해감
+  }
+
+  interface IRawDonation {
+    abort: IRawVote
+    add: IRawVote
+    currentAmount: BigNumber
+    maxAmount: BigNumber
+    hasAbort: boolean
+    ipfsKey: string
+    donationStatus: BigNumber
+    governanceStatus: BigNumber
+  }
+
+  interface IDonation {
+    abort: IVote
+    add: IVote
+    currentAmount: number
+    maxAmount: number
+    hasAbort: boolean
+    ipfsKey: string
+    donationStatus: DonationStatus
+    governanceStatus: GovernanceStatus
+  }
+
+  interface IVote {
+    status: boolean
+    createdAt: number
+    donationId: string
+    proposalId: string
+    voteYes: number
+    voteNo: number
+    period: number
+  }
+
+  const convertVote = (rawVote: IRawVote) => {
+    return {
+      status: !!rawVote.canVote.toNumber(),
+      createdAt: rawVote.createdTime.toNumber(),
+      donationId: rawVote.donateId.toString(),
+      proposalId: rawVote.proposalId.toString(),
+      voteYes: rawVote.voteFor.toNumber(),
+      voteNo: rawVote.voteAgainst.toNumber(),
+      period: rawVote.period.toNumber(),
+    }
+  }
+
+  const convertDonation = (res: IRawDonation) => {
+    return {
+      abort: convertVote(res.abort),
+      add: convertVote(res.add),
+      currentAmount: res.currentAmount.toNumber(),
+      maxAmount: res.maxAmount.toNumber(),
+      hasAbort: res.hasAbort,
+      ipfsKey: res.ipfsKey,
+      governanceStatus: res.governanceStatus.toNumber(), //
+      donationStatus: res.donationStatus.toNumber(),
+    }
+  }
 
   useEffect(() => {
-    id && getDonationBykey(id).then((res) => console.log('res,', res))
+    id &&
+      getDonationBykey(id).then((res) => {
+        console.log(res)
+        setDonation(convertDonation(res))
+        console.log(account)
+      })
   }, [id])
 
   return (
@@ -166,36 +255,54 @@ const CampaignDetail = () => {
           <Typography>{metadata?.writerAddress}</Typography>
           <Typography variant='h6'>{metadata?.title}</Typography>
           <p>{metadata?.description}</p>
+          <p>👍 {donation?.add.voteYes}</p>
+          <p>👎{donation?.add.voteNo}</p>
+          <p>
+            {donation?.currentAmount}/{donation?.maxAmount} USDC
+          </p>
+          {donation?.hasAbort && donation.abort.voteYes ? (
+            <p>{donation.abort.voteYes}</p>
+          ) : (
+            ''
+          )}
         </Box>
       </Box>
       <Box sx={{ display: 'flex', margin: '0 auto' }}>
         <div>{metadata?.reviewContents}</div>
       </Box>
-      <Form onSubmit={handleSubmit(onSubmit)}>
-        {defailForm.map((data) => (
-          <BaseInput
-            key={data.label}
-            name={data.name}
-            type={data.type as InputType}
-            label={data.label}
-            multiline={data.multiline || false}
-            register={register(data.name as InputsKey)}
-          />
-        ))}
-        {/* // TODO 체크박스 */}
-        <LoadingButton
-          variant='contained'
-          sx={{
-            mt: 3,
-            color: '#ffffff',
-            fontWeight: 'bold',
-            fontSize: '1.1rem',
-          }}
-          type='submit'
-        >
-          Submit
-        </LoadingButton>
-      </Form>
+      {donation?.donationStatus &&
+      donation.donationStatus === DonationStatus.Completed &&
+      metadata?.writerAddress &&
+      metadata.writerAddress ===
+        '' /* @TODO: 여기에 account비교를 추가해야합니다. */ ? (
+        <Form onSubmit={handleSubmit(onSubmit)}>
+          {defailForm.map((data) => (
+            <BaseInput
+              key={data.label}
+              name={data.name}
+              type={data.type as InputType}
+              label={data.label}
+              multiline={data.multiline || false}
+              register={register(data.name as InputsKey)}
+            />
+          ))}
+          {/* // TODO 체크박스 */}
+          <LoadingButton
+            variant='contained'
+            sx={{
+              mt: 3,
+              color: '#ffffff',
+              fontWeight: 'bold',
+              fontSize: '1.1rem',
+            }}
+            type='submit'
+          >
+            Submit
+          </LoadingButton>
+        </Form>
+      ) : (
+        ''
+      )}
     </>
   )
 }

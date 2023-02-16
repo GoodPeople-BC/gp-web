@@ -507,6 +507,11 @@
         "type": "uint32"
       },
       {
+        "internalType": "bool",
+        "name": "claimed",
+        "type": "bool"
+      },
+      {
         "internalType": "address",
         "name": "recipient",
         "type": "address"
@@ -624,6 +629,11 @@
             "type": "uint32"
           },
           {
+            "internalType": "bool",
+            "name": "claimed",
+            "type": "bool"
+          },
+          {
             "internalType": "address",
             "name": "recipient",
             "type": "address"
@@ -639,7 +649,7 @@
             "type": "uint8"
           }
         ],
-        "internalType": "struct GPVault.DonateProposal",
+        "internalType": "struct IGPVault.DonateProposal",
         "name": "",
         "type": "tuple"
       }

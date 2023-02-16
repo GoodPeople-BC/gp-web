@@ -372,6 +372,16 @@
             "internalType": "string",
             "name": "ipfsKey",
             "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "governanceStatus",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "donationStatus",
+            "type": "uint256"
           }
         ],
         "internalType": "struct GPService.DonationInfo",
@@ -497,6 +507,16 @@
             "internalType": "string",
             "name": "ipfsKey",
             "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "governanceStatus",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "donationStatus",
+            "type": "uint256"
           }
         ],
         "internalType": "struct GPService.DonationInfo",
@@ -616,6 +636,16 @@
             "internalType": "string",
             "name": "ipfsKey",
             "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "governanceStatus",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "donationStatus",
+            "type": "uint256"
           }
         ],
         "internalType": "struct GPService.DonationInfo[]",
