@@ -75,7 +75,7 @@ jobs:
       - name: Make service envfile
         uses: SpicyPizza/create-envfile@v1.3
         with:
-          envkey_PORT: ${{ secrets.REACT_APP_API_SERVER }}
+          envkey_REACT_APP_API_SERVER: ${{ secrets.REACT_APP_API_SERVER }}
           file_name: .env
 
       # Install Dependencies
