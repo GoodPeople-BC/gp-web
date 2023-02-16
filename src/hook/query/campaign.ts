@@ -11,6 +11,9 @@ export function useMetadataByName(name: string) {
     cacheTime: 0,
   })
 }
-export function useMetadata(keys: string[]) {
-  return useQuery('getMetadata', () => getMetadata(keys))
+
+export function useMetadata(keys: string[] | undefined) {
+  return useQuery('getMetadata', () => keys && getMetadata(keys), {
+    enabled: !!keys,
+  })
 }
