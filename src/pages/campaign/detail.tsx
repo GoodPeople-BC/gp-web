@@ -202,9 +202,7 @@ const CampaignDetail = () => {
   useEffect(() => {
     id &&
       getDonationBykey(id).then((res) => {
-        console.log(res)
         setDonation(convertDonation(res))
-        console.log(account)
       })
   }, [id])
 
