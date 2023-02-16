@@ -42,9 +42,9 @@ jobs:
 
   #     # Build Application
   #     - name: Build Application
-  #       run: yarn build
+  #       run: CI=false yarn build
 
-  #     # AWS credential 설정
+  #     # Setup AWS credentials
   #     - name: Configure AWS credentials
   #       uses: aws-actions/configure-aws-credentials@v1
   #       with:
@@ -52,6 +52,7 @@ jobs:
   #         aws-secret-access-key: ${{ secrets.AWS_ACCESS_SECRETS }}
   #         aws-region: ${{ secrets.AWS_REGION }}
 
+  #     # Deploy application to S3
   #     - name: Deploy to S3
   #       run: aws s3 sync build/ s3://${{ secrets.AWS_S3_DEPLOY_BUCKET }} --delete
 
