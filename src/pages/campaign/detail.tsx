@@ -8,10 +8,14 @@ import { useEffect, useMemo, useState } from 'react'
 import { useMetadataByName } from '../../hook/query/campaign'
 import { IGetMetadataByNameResp } from '../../api/interface'
 import { LoadingButton } from '@mui/lab'
-import { Box, Skeleton, Typography, useTheme } from '@mui/material'
+import { Box, Skeleton, Typography, useTheme, Button } from '@mui/material'
 import { autoPlay } from 'react-swipeable-views-utils'
 import SwipeableViews from 'react-swipeable-views'
-import { getDonationBykey } from '../../api/contract/GPService'
+import {
+  getDonationBykey,
+  abortDonationProposal,
+} from '../../api/contract/GPService'
+import { BigNumber } from 'ethers'
 
 type Inputs = {
   contents: string
@@ -73,6 +77,31 @@ const CampaignDetail = () => {
     return data
   }, [data])
 
+  interface IDonation {
+    abort: {
+      canVote: BigNumber
+      createTiem: BigNumber
+      donateId: BigNumber
+      period: BigNumber
+      proposalId: BigNumber
+      voteAgainst: BigNumber
+      voteFor: BigNumber
+    }
+    add: {
+      canVote: BigNumber
+      createTiem: BigNumber
+      donateId: BigNumber
+      period: BigNumber
+      proposalId: BigNumber
+      voteAgainst: BigNumber
+      voteFor: BigNumber
+    }
+    currentAmount: BigNumber
+    hasAbort: boolean
+    ipfsKey: string
+    maxAmount: BigNumber
+  }
+
   const {
     register,
     handleSubmit,
@@ -99,9 +128,38 @@ const CampaignDetail = () => {
   }
 
   const [activeStep, setActiveStep] = useState(0)
+  const [donation, setDonation] = useState<IDonation>()
   const theme = useTheme()
 
   const maxSteps = 3
+
+  const handleReportClick = () => {
+    if (donation !== undefined) {
+      console.log(donation.add.donateId.toString())
+      abortDonationProposal(donation.add.donateId.toString()).then((res) =>
+        console.log(res)
+      )
+    }
+  }
+
+  const handleVoteFor = () => {
+    if (donation !== undefined) {
+      alert('clicked for')
+    }
+  }
+
+  const handleVoteAgainst = () => {
+    if (donation !== undefined) {
+      alert('clicked against')
+    }
+  }
+
+  const checkAbortProposal = () => {
+    if (donation !== undefined) {
+      return donation.hasAbort
+    }
+    return false
+  }
 
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1)
@@ -116,7 +174,7 @@ const CampaignDetail = () => {
   }
 
   useEffect(() => {
-    id && getDonationBykey(id).then((res) => console.log('res,', res))
+    id && getDonationBykey(id).then((res) => setDonation(res))
   }, [id])
 
   return (
@@ -167,6 +225,31 @@ const CampaignDetail = () => {
           <Typography variant='h6'>{metadata?.title}</Typography>
           <p>{metadata?.description}</p>
         </Box>
+      </Box>
+      <Box>
+        <Button
+          variant='contained'
+          onClick={handleReportClick}
+          disabled={checkAbortProposal()}
+        >
+          Report
+        </Button>
+
+        <Button
+          variant='contained'
+          onClick={handleVoteFor}
+          disabled={!checkAbortProposal()}
+        >
+          voteFor
+        </Button>
+
+        <Button
+          variant='contained'
+          onClick={handleVoteAgainst}
+          disabled={!checkAbortProposal()}
+        >
+          voteAgainst
+        </Button>
       </Box>
       <Box sx={{ display: 'flex', margin: '0 auto' }}>
         <div>{metadata?.reviewContents}</div>
