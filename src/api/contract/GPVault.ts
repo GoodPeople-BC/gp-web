@@ -1,20 +1,16 @@
 import { VAULT_CA } from '../../constants/contract'
-import { Contract } from 'ethers'
+import { Contract, ethers } from 'ethers'
 import GPVaultABI from '../../abi/GPVaultABI.json'
 
-const VAULT_CONTRACT = new Contract(VAULT_CA, GPVaultABI)
-export const GPVault = () => {
-  const donate = async (id: number, amount: number) => {
-    return await VAULT_CONTRACT.donate(id, amount)
-  }
+const provider = new ethers.providers.Web3Provider(window.ethereum, 'any')
+const signer = provider.getSigner()
 
-  const sponserGp = async () => {
-    return await VAULT_CONTRACT.sponserGp()
-  }
+export const getVaultContract = async () => {
+  const contract = new Contract(VAULT_CA, GPVaultABI, signer)
+  return contract
+}
 
-  const claim = async () => {
-    return await VAULT_CONTRACT.claim()
-  }
-
-  return { donate, sponserGp, claim }
+export const donate = async (id: number, amount: number) => {
+  const VaultContract = await getVaultContract()
+  return VaultContract.donate(id, amount)
 }

@@ -17,6 +17,7 @@ import {
   getTargetPeriods,
 } from '../../api/contract/GPService'
 import { useEffect, useState } from 'react'
+import { Alert, Checkbox } from '@mui/material'
 
 interface Inputs {
   title: string
@@ -185,6 +186,12 @@ const CampaignCreate = () => {
     },
   ]
 
+  const [checked, setChecked] = useState(true)
+
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setChecked(event.target.checked)
+  }
+
   return (
     <>
       {/* img1 required */}
@@ -217,6 +224,24 @@ const CampaignCreate = () => {
             )
           )
         )}
+        {/* 체크
+         */}
+
+        <Alert
+          icon={
+            <Checkbox
+              checked={checked}
+              onChange={handleChange}
+              inputProps={{ 'aria-label': 'controlled' }}
+            />
+          }
+          severity='info'
+        >
+          If you submit the form, the agenda will be registered for review, and
+          if you pass the governance vote, you will have to press the button
+          directly on the detail page to make it donationable, and if you fail
+          to pass the vote, the agenda will be deleted.
+        </Alert>
         <LoadingButton
           variant='contained'
           sx={{
@@ -226,6 +251,7 @@ const CampaignCreate = () => {
             fontSize: '1.1rem',
           }}
           type='submit'
+          disabled={!checked}
         >
           Submit
         </LoadingButton>
