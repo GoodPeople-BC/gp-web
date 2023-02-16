@@ -1,7 +1,6 @@
 import styled from '@emotion/styled'
 import { useParams } from 'react-router'
 import { SubmitHandler, useForm } from 'react-hook-form'
-
 import { addReview } from '../../api/CampaignAPI'
 import BaseInput, { InputType } from '../../components/Form/BaseInput'
 import { useEffect, useMemo, useState } from 'react'
@@ -81,6 +80,7 @@ const CampaignDetail = () => {
 
   // useQuery
   const { data, isLoading } = useMetadataByName(id as string)
+
   // useMemo
   const metadata: IGetMetadataByNameResp | undefined = useMemo(() => {
     return data
