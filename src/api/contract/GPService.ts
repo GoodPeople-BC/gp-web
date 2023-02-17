@@ -56,3 +56,8 @@ export const addDonationProposal = async (
   const ServiceContract = await getServiceContract()
   return ServiceContract.addDonationProposal(amount, period, address, ipfsKey)
 }
+
+export const executeAddDonationProposal = async (donationId: string) => {
+  const ServiceContract = await getServiceContract()
+  return ServiceContract.executeAddDonationProposal(donationId)
+}

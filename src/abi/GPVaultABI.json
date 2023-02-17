@@ -99,37 +99,6 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "DonationAborted",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "donateId",
-        "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "recipient",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "from",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
         "name": "Amount",
         "type": "uint256"
       }
@@ -344,19 +313,6 @@
         "internalType": "uint256",
         "name": "donateId",
         "type": "uint256"
-      }
-    ],
-    "name": "abortDonateProposal",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "donateId",
-        "type": "uint256"
       },
       {
         "internalType": "uint256",
@@ -406,11 +362,67 @@
     "inputs": [
       {
         "internalType": "uint256",
+        "name": "donateId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "start",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "end",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "r",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "c",
+        "type": "bool"
+      }
+    ],
+    "name": "changeDonatePeriod",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
         "name": "_gpBP",
         "type": "uint256"
       }
     ],
     "name": "changeGpBp",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "donateId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "enum IGPVault.ProposalStatus",
+        "name": "status",
+        "type": "uint8"
+      }
+    ],
+    "name": "changeProposalStatus",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -512,6 +524,11 @@
         "type": "bool"
       },
       {
+        "internalType": "bool",
+        "name": "refunded",
+        "type": "bool"
+      },
+      {
         "internalType": "address",
         "name": "recipient",
         "type": "address"
@@ -522,7 +539,7 @@
         "type": "string"
       },
       {
-        "internalType": "enum IGPVault.DonationStatus",
+        "internalType": "enum IGPVault.ProposalStatus",
         "name": "status",
         "type": "uint8"
       }
@@ -586,6 +603,16 @@
         "internalType": "string",
         "name": "",
         "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -634,6 +661,11 @@
             "type": "bool"
           },
           {
+            "internalType": "bool",
+            "name": "refunded",
+            "type": "bool"
+          },
+          {
             "internalType": "address",
             "name": "recipient",
             "type": "address"
@@ -644,7 +676,7 @@
             "type": "string"
           },
           {
-            "internalType": "enum IGPVault.DonationStatus",
+            "internalType": "enum IGPVault.ProposalStatus",
             "name": "status",
             "type": "uint8"
           }
@@ -652,25 +684,6 @@
         "internalType": "struct IGPVault.DonateProposal",
         "name": "",
         "type": "tuple"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "donateId",
-        "type": "uint256"
-      }
-    ],
-    "name": "getDonationStatus",
-    "outputs": [
-      {
-        "internalType": "enum IGPVault.DonationStatus",
-        "name": "status",
-        "type": "uint8"
       }
     ],
     "stateMutability": "view",

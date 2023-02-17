@@ -1,16 +1,16 @@
 import { GOVERNANCE_CA } from '../../constants/contract'
-import { Contract } from 'ethers'
+import { Contract, ethers } from 'ethers'
 import GPGovernanceABI from '../../abi/GPGovernanceABI.json'
 
-export const GOVERNANCE_CONTRACT = new Contract(GOVERNANCE_CA, GPGovernanceABI)
-export const GPGovernance = () => {
-  const castVote = async (proposalId: number, support: 1 | 0) => {
-    return await GOVERNANCE_CONTRACT.castVote(proposalId, support)
-  }
+const provider = new ethers.providers.Web3Provider(window.ethereum, 'any')
+const signer = provider.getSigner()
 
-  const state = async (proposalId: number) => {
-    return await GOVERNANCE_CONTRACT.state(proposalId)
-  }
+export const getGovernanceContract = async () => {
+  const contract = new Contract(GOVERNANCE_CA, GPGovernanceABI, signer)
+  return contract
+}
 
-  return { castVote, state }
+export const castVote = async (id: string, support: number) => {
+  const GovernanceContract = await getGovernanceContract()
+  return GovernanceContract.castVote(id, support)
 }

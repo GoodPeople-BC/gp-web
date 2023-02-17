@@ -10,7 +10,22 @@ export const getVaultContract = async () => {
   return contract
 }
 
-export const donate = async (id: number, amount: number) => {
+export const donate = async (id: string, amount: number) => {
   const VaultContract = await getVaultContract()
   return VaultContract.donate(id, amount)
+}
+
+export const sponsorGp = async (amount: number) => {
+  const VaultContract = await getVaultContract()
+  return VaultContract.sponsorGp(amount)
+}
+
+export const refund = async (donateId: string) => {
+  const VaultContract = await getVaultContract()
+  return VaultContract.refund(donateId)
+}
+
+export const claim = async (donateId: string) => {
+  const VaultContract = await getVaultContract()
+  return VaultContract.claim(donateId)
 }

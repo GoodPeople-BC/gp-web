@@ -18,6 +18,8 @@ import {
 } from '../../api/contract/GPService'
 import { useEffect, useState } from 'react'
 import { Alert, Checkbox } from '@mui/material'
+import Title from '../../components/common/Title'
+import { useNavigate } from 'react-router-dom'
 
 interface Inputs {
   title: string
@@ -80,6 +82,7 @@ const CampaignCreate = () => {
     },
   })
   // * handle form submission
+  const navigate = useNavigate()
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     // * create formData
     const formData = new FormData()
@@ -100,7 +103,10 @@ const CampaignCreate = () => {
           account,
           res.pinataKey
         )
-          .then(console.log)
+          .then((res) => {
+            // navigate('/')
+            console.log(res)
+          })
           .catch(() =>
             cancelCampaign(res.pinataKey).then(console.log).catch(console.error)
           )
@@ -186,7 +192,7 @@ const CampaignCreate = () => {
     },
   ]
 
-  const [checked, setChecked] = useState(true)
+  const [checked, setChecked] = useState(false)
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setChecked(event.target.checked)
@@ -195,6 +201,9 @@ const CampaignCreate = () => {
   return (
     <>
       {/* img1 required */}
+      <Title subTitle='Once you submit the form, the vote will proceed.'>
+        Create Campaign
+      </Title>
       <Form onSubmit={handleSubmit(onSubmit)}>
         {createCampaignForm.map((data) =>
           data.type !== 'radio' ? (
@@ -224,9 +233,6 @@ const CampaignCreate = () => {
             )
           )
         )}
-        {/* 체크
-         */}
-
         <Alert
           icon={
             <Checkbox

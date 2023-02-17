@@ -9,7 +9,12 @@ import { IGetMetadataByNameResp } from '../../api/interface'
 import { LoadingButton } from '@mui/lab'
 import {
   Box,
+  Button,
+  ButtonGroup,
+  CircularProgress,
   Divider,
+  LinearProgress,
+  linearProgressClasses,
   Skeleton,
   TextField,
   Typography,
@@ -17,13 +22,52 @@ import {
 } from '@mui/material'
 import { autoPlay } from 'react-swipeable-views-utils'
 import SwipeableViews from 'react-swipeable-views'
-import { getDonationBykey } from '../../api/contract/GPService'
-import { IDonation } from '../../api/contract/interface'
-import { BigNumber, Contract, ethers } from 'ethers'
-import { useRecoilState } from 'recoil'
+import {
+  executeAddDonationProposal,
+  getDonationBykey,
+} from '../../api/contract/GPService'
+import { Contract, ethers } from 'ethers'
+import { useRecoilValue } from 'recoil'
 import { accountState } from '../../atom'
 import ERC20ABI from '../../abi/ERC20ABI.json'
-import { donate } from '../../api/contract/GPVault'
+import { claim, donate, refund } from '../../api/contract/GPVault'
+import { USDC_CA, VAULT_CA } from '../../constants/contract'
+import { castVote } from '../../api/contract/GpGovernance'
+import Title from '../../components/common/Title'
+import { IRawDonation, IRawVote } from '../../interfaces'
+
+enum DonationStatus {
+  False,
+  Voting, // 0
+  VoteDefeated, // 1
+  VoteSucceeded, // 2
+  DonateWaiting, // 3
+  Donating, // 4
+  DonateDefeated, // 5
+  DonateSucceeded, // 6
+  DonateComplete, // 7
+  DonateRefunded, // 8
+  Unknown, // 9
+}
+
+interface IProcessedVote {
+  status: number
+  createdAt: string
+  donateId: string
+  proposalId: string
+  voteYes: string
+  voteNo: string
+  period: string
+}
+
+interface IConvertedDonation {
+  add: IProcessedVote
+  currentAmount: number
+  end: number
+  ipfsKey: string
+  maxAmount: number
+  start: number
+}
 
 type Inputs = {
   contents: string
@@ -70,13 +114,17 @@ const detailForm: IDetaileForm[] = [
   },
 ]
 
-// 기부 상세 페이지 (후기 작성)
+interface DonationInput {
+  amount: string
+}
+
 const AutoPlaySwipeableViews = autoPlay(SwipeableViews)
 
 const CampaignDetail = () => {
-  // 기부글 등록 시 리턴된 unique key로 기부 상세 dynamic routing
-  // /campaign/${uniqueKey}로 접속하여 테스트 가능
   const { id } = useParams()
+  const [activeStep, setActiveStep] = useState(0)
+  const [donation, setDonation] = useState<IConvertedDonation>()
+  const theme = useTheme()
 
   // useQuery
   const { data, isLoading } = useMetadataByName(id as string)
@@ -111,295 +159,135 @@ const CampaignDetail = () => {
     })
   }
 
-  const [activeStep, setActiveStep] = useState(0)
-  const theme = useTheme()
+  // const maxSteps = 3
 
-  const maxSteps = 3
+  // const handleNext = () => {
+  //   setActiveStep((prevActiveStep) => prevActiveStep + 1)
+  // }
 
-  const handleNext = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep + 1)
-  }
+  // const handleBack = () => {
+  //   setActiveStep((prevActiveStep) => prevActiveStep - 1)
+  // }
 
-  const handleBack = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep - 1)
-  }
-
-  const handleStepChange = (step: number) => {
-    setActiveStep(step)
-  }
-  const [donation, setDonation] = useState<IDonation>()
-
-  interface IRawVote {
-    canVote: BigNumber
-    createdTime: BigNumber
-    donateId: BigNumber
-    proposalId: BigNumber
-    voteFor: BigNumber
-    voteAgainst: BigNumber
-    period: BigNumber
-  }
-
-  enum GovernanceStatus {
-    Vote, // add 투표중
-    Idle, // 기부 가능 상태
-    Aborted, // 신고당해서 취소되었음
-    Completed, // 기부금 수령해감
-  }
-
-  enum DonationStatus {
-    Waiting, // 시작 시간에 도달 못함
-    Proceeding, // 투표중
-    Succeeded, // 시간 내에 투표 목표 달성
-    Failed, // 시간 내에 투표 목표 미달성
-    Completed, // 투표 목표 달성하여 기부금 수령해감
-  }
-
-  interface IRawDonation {
-    abort: IRawVote
-    add: IRawVote
-    currentAmount: BigNumber
-    maxAmount: BigNumber
-    hasAbort: boolean
-    ipfsKey: string
-    donationStatus: BigNumber
-    governanceStatus: BigNumber
-  }
-
-  interface IDonation {
-    abort: IVote
-    add: IVote
-    currentAmount: number
-    maxAmount: number
-    hasAbort: boolean
-    ipfsKey: string
-    donationStatus: DonationStatus
-    governanceStatus: GovernanceStatus
-  }
-
-  interface IVote {
-    status: boolean
-    createdAt: number
-    donationId: string
-    proposalId: string
-    voteYes: number
-    voteNo: number
-    period: number
-  }
+  // const handleStepChange = (step: number) => {
+  //   setActiveStep(step)
+  // }
 
   const convertVote = (rawVote: IRawVote) => {
     return {
-      status: !!rawVote.canVote.toNumber(),
-      createdAt: rawVote.createdTime.toNumber(),
-      donationId: rawVote.donateId.toString(),
-      proposalId: rawVote.proposalId.toString(),
-      voteYes: rawVote.voteFor.toNumber(),
-      voteNo: rawVote.voteAgainst.toNumber(),
-      period: rawVote.period.toNumber(),
+      status: rawVote.canVote.toNumber() + 1,
+      createdAt: rawVote.createdTime.toString(),
+      donateId: rawVote.donateId.toString(),
+      proposalId: rawVote.proposalId.toString(), // bignumber 이슈로 string으로 변경
+      voteYes: rawVote.voteFor.toString(),
+      voteNo: rawVote.voteAgainst.toString(),
+      period: rawVote.period.toString(),
     }
   }
 
   const convertDonation = (res: IRawDonation) => {
     return {
-      abort: convertVote(res.abort),
       add: convertVote(res.add),
       currentAmount: res.currentAmount.toNumber(),
       maxAmount: res.maxAmount.toNumber(),
-      hasAbort: res.hasAbort,
       ipfsKey: res.ipfsKey,
-      governanceStatus: res.governanceStatus.toNumber(), //
-      donationStatus: res.donationStatus.toNumber(),
+      start: res.start.toNumber(),
+      end: res.start.toNumber(),
     }
   }
+
   useEffect(() => {
     id &&
       getDonationBykey(id).then((res) => {
-        console.log(res)
+        console.log(res, 'res')
         setDonation(convertDonation(res))
-        console.log(account)
       })
   }, [id])
-
-  interface DonationInput {
-    amount: string
-  }
 
   const { register: donationRegister, handleSubmit: handleDonationSubmit } =
     useForm<DonationInput>({
       defaultValues: { amount: '' },
     })
 
-  const [account, setAccount] = useRecoilState(accountState)
+  const account = useRecoilValue(accountState)
 
   const onDonationSubmit = async (data: any) => {
-    // usdc ca: 0xE097d6B3100777DC31B34dC2c58fB524C2e76921
     const provider = new ethers.providers.Web3Provider(window.ethereum, 'any')
     const signer = provider.getSigner()
-    const USDC_CA = '0xE097d6B3100777DC31B34dC2c58fB524C2e76921'
     const usdcContract = new Contract(USDC_CA, ERC20ABI, signer)
-    const { _hex: allowance } = await usdcContract.allowance(
-      account,
-      '0xE097d6B3100777DC31B34dC2c58fB524C2e76921'
-    )
-    // allowance가 입력값보다 작으면, 입력값-allowance 만큼을 approve 받는다
-    if (parseInt(allowance) / 10 ** 6 < data.amount) {
-      const a = await usdcContract.approve(USDC_CA, data.amount * 10 ** 6)
+    const allowance = await usdcContract.allowance(account, VAULT_CA)
+    if (allowance.toString() / 10 ** 6 < data.amount) {
+      const approve = await usdcContract.approve(
+        VAULT_CA,
+        data.amount * 10 ** 6
+      )
     }
-    donate(parseInt(donation!.add.donationId), data.amount * 10 ** 6)
+    donate(donation!.add.donateId, data.amount * 10 ** 6)
   }
 
-  const [tmpState, setTmpState] = useState(0)
-  const [tmpDonateState, setTmpDonateState] = useState(0)
-  const handleClickTmp = () => {
-    // - Active, uint 0 투표 가능
-    // - Defeated, uint 1 투표 실패
-    // - Succeeded, uint 2 투표 성공
-    // - Executed, uint 3 투표 성공 & 실행 완료
-    // - Unknown, uint 4 사용하지 않는 governance state가 온 경우
-    if (tmpState < 4) {
-      setTmpState(tmpState + 1)
-    } else {
-      setTmpState(0)
-    }
-  }
-  const handleClickTmpDonate = () => {
-    // Vote, // 투표중
-    // Idle, // 대기중(기부 가능)
-    // Aborted, // 유저 신고로 취소
-    // Completed  // 유저가 기부금 수령해감
-    if (tmpDonateState < 3) {
-      setTmpDonateState(tmpDonateState + 1)
-    } else {
-      setTmpDonateState(0)
-    }
+  const onClickVote = (support: number) => {
+    if (!donation?.add.proposalId) return
+    castVote(donation?.add.proposalId, support)
   }
 
   return (
     <>
-      <button onClick={handleClickTmp}>current state: {tmpState}</button>
-      <button onClick={handleClickTmpDonate}>
-        current state: {tmpDonateState}
-      </button>
-
-      {/* state 상관없이 제공할 기부 관련 데이터 */}
-      <Box sx={{ display: 'flex', margin: '0 auto' }}>
-        {isLoading ? (
-          <Skeleton
-            variant='rectangular'
-            width={250}
-            height={250}
-            sx={{ borderRadius: 2 }}
-          />
-        ) : (
-          <AutoPlaySwipeableViews
-            interval={3000}
-            autoPlay={false}
-            axis={theme.direction === 'rtl' ? 'x-reverse' : 'x'}
-            index={activeStep}
-            onChangeIndex={handleStepChange}
-            enableMouseEvents
-            style={{
-              width: '250px',
-              marginRight: '10px',
+      {!metadata ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <>
+          <Title
+            subTitle={`proponent: ${metadata?.writerAddress}`}
+            rightSide={
+              <Box sx={{ display: 'flex' }}>
+                <Typography sx={{ mr: 1 }}>
+                  👍{' '}
+                  {donation?.add.voteYes &&
+                    Number(donation?.add.voteYes) / 10 ** 18}
+                </Typography>
+                <Typography>
+                  👎{' '}
+                  {donation?.add.voteNo &&
+                    Number(donation?.add.voteNo) / 10 ** 18}
+                </Typography>
+              </Box>
+            }
+          >
+            {metadata ? metadata.title : ''}
+          </Title>
+          {/* state 상관없이 제공할 기부 관련 데이터 */}
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              margin: '0 auto',
             }}
           >
-            {metadata &&
-              metadata.imgs.map((o, index) => (
-                <div key={index}>
-                  {Math.abs(activeStep - index) <= 2 ? (
-                    <Box
-                      component='img'
-                      src={o}
-                      sx={{
-                        backgroundSize: 'contain',
-                        backgroundPosition: 'center center',
-                        borderRadius: 2,
-                      }}
-                      width={250}
-                      height={250}
-                    />
-                  ) : null}
-                </div>
-              ))}
-          </AutoPlaySwipeableViews>
-        )}
-        <Box width={400}>
-          <Typography>{metadata?.writerAddress}</Typography>
-          <Typography variant='h6'>{metadata?.title}</Typography>
-          <p>{metadata?.description}</p>
-          <p>👍 {donation?.add.voteYes}</p>
-          <p>👎{donation?.add.voteNo}</p>
-          <p>
-            {donation?.currentAmount}/{donation?.maxAmount} USDC
-          </p>
-          {donation?.hasAbort && donation.abort.voteYes ? (
-            <p>{donation.abort.voteYes}</p>
-          ) : (
-            ''
-          )}
-        </Box>
-      </Box>
-      <Divider sx={{ my: 2 }} />
-
-      {tmpDonateState === 0 && (
-        <div>
-          A vote on the donation proposal is under way. 등록 투표 활성화
-        </div>
-      )}
-
-      {/* 기부가능상태 - 기부하기 */}
-      {tmpDonateState === 1 && (
-        <>
-          <div>Donations are in progress.</div>
-          <Form onSubmit={handleDonationSubmit(onDonationSubmit)}>
-            <TextField
-              required
-              type='number'
-              label='amount'
-              {...donationRegister('amount', { required: true })}
-            />
-            <LoadingButton
-              variant='contained'
-              sx={{
-                mt: 3,
-                color: '#ffffff',
-                fontWeight: 'bold',
-                fontSize: '1.1rem',
-              }}
-              type='submit'
-            >
-              Donate
-            </LoadingButton>
-          </Form>
-        </>
-      )}
-
-      {tmpDonateState === 2 && (
-        <div>
-          This donation is under review due to the user's report. 취소 투표
-          활성화
-        </div>
-      )}
-
-      {/* 기부완료상태 - 기부컨텐츠 */}
-      {tmpDonateState === 3 && (
-        <>
-          <div>Donations are closed.</div>
-          {metadata?.reviewContents && (
-            <Box sx={{ display: 'flex', margin: '0 auto' }}>
+            {isLoading ? (
+              <Skeleton
+                variant='rectangular'
+                width={300}
+                height={300}
+                sx={{ borderRadius: 2 }}
+              />
+            ) : (
               <AutoPlaySwipeableViews
                 interval={3000}
                 autoPlay={false}
                 axis={theme.direction === 'rtl' ? 'x-reverse' : 'x'}
                 index={activeStep}
-                onChangeIndex={handleStepChange}
+                // onChangeIndex={handleStepChange}
                 enableMouseEvents
                 style={{
-                  width: '250px',
+                  width: '300px',
                   marginRight: '10px',
                 }}
               >
-                {metadata?.reviewImgs &&
-                  metadata.reviewImgs.map((o, index) => (
+                {metadata &&
+                  metadata.imgs.map((o, index) => (
                     <div key={index}>
                       {Math.abs(activeStep - index) <= 2 ? (
                         <Box
@@ -410,50 +298,244 @@ const CampaignDetail = () => {
                             backgroundPosition: 'center center',
                             borderRadius: 2,
                           }}
-                          width={250}
-                          height={250}
+                          width={300}
+                          height={300}
                         />
                       ) : null}
                     </div>
                   ))}
               </AutoPlaySwipeableViews>
-              <div>{metadata?.reviewContents}</div>
+            )}
+            <Box width={400}>
+              {donation?.add.status && donation?.add.status > 4 && (
+                <>
+                  <BorderLinearProgress
+                    variant='determinate'
+                    value={
+                      donation?.currentAmount && donation?.maxAmount
+                        ? donation?.currentAmount / donation?.maxAmount
+                        : 10
+                    }
+                  />
+                  <Typography sx={{ textAlign: 'right' }}>
+                    {donation?.currentAmount &&
+                      (donation?.currentAmount / 10 ** 6).toLocaleString(
+                        'en'
+                      )}{' '}
+                    /
+                    {donation?.maxAmount &&
+                      (donation?.maxAmount / 10 ** 6).toLocaleString('en')}{' '}
+                    USDC
+                  </Typography>
+                </>
+              )}
+              <p>{metadata?.description}</p>
             </Box>
-          )}
-
-          {donation?.donationStatus &&
-          donation.donationStatus === DonationStatus.Completed &&
-          metadata?.writerAddress &&
-          metadata.writerAddress ===
-            '' /* @TODO: 여기에 account비교를 추가해야합니다. */ ? (
-            <Form onSubmit={handleSubmit(onSubmit)}>
-              {detailForm.map((data) => (
-                <BaseInput
-                  key={data.label}
-                  name={data.name}
-                  type={data.type as InputType}
-                  label={data.label}
-                  multiline={data.multiline || false}
-                  register={register(data.name as InputsKey)}
-                />
-              ))}
-              {/* // TODO 체크박스 */}
-              <LoadingButton
-                variant='contained'
-                sx={{
-                  mt: 3,
-                  color: '#ffffff',
-                  fontWeight: 'bold',
-                  fontSize: '1.1rem',
-                }}
-                type='submit'
-              >
-                Submit
-              </LoadingButton>
-            </Form>
-          ) : (
-            ''
-          )}
+          </Box>
+          <Divider sx={{ my: 2 }} />
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            {donation?.add.status && (
+              <>
+                {donation.add.status === DonationStatus.Voting && (
+                  <ButtonGroup variant='contained'>
+                    <Button onClick={() => onClickVote(1)}>
+                      👍 like (
+                      {donation?.add.voteYes &&
+                        Number(donation?.add.voteYes) / 10 ** 18}
+                      )
+                    </Button>
+                    <Button onClick={() => onClickVote(0)}>
+                      👎 unlike(
+                      {donation?.add.voteYes &&
+                        Number(donation?.add.voteNo) / 10 ** 18}
+                      )
+                    </Button>
+                  </ButtonGroup>
+                )}
+                {donation.add.status === DonationStatus.VoteDefeated && (
+                  <div>
+                    VoteDefeated: Agenda that didn't pass the governance vote.
+                  </div>
+                )}
+                {donation.add.status === DonationStatus.VoteSucceeded && (
+                  <>
+                    {metadata?.writerAddress &&
+                    metadata.writerAddress === account ? (
+                      <>
+                        <Typography>
+                          Press the execute button to start the donation.
+                        </Typography>
+                        <Button
+                          onClick={() => {
+                            executeAddDonationProposal(donation.add.donateId)
+                          }}
+                        >
+                          execute
+                        </Button>
+                      </>
+                    ) : (
+                      <div>
+                        Agenda passed the governance vote. When the proposer
+                        executes the donation, the donation begins.
+                      </div>
+                    )}
+                  </>
+                )}
+                {donation.add.status === DonationStatus.DonateWaiting && (
+                  <div>DonateWaiting...</div>
+                )}
+                {donation.add.status === DonationStatus.Donating && (
+                  <>
+                    <div>Donating</div>
+                    <Form onSubmit={handleDonationSubmit(onDonationSubmit)}>
+                      <TextField
+                        required
+                        type='number'
+                        label='amount'
+                        {...donationRegister('amount', { required: true })}
+                      />
+                      <LoadingButton
+                        variant='contained'
+                        sx={{
+                          mt: 3,
+                          color: '#ffffff',
+                          fontWeight: 'bold',
+                          fontSize: '1.1rem',
+                        }}
+                        type='submit'
+                      >
+                        Donate
+                      </LoadingButton>
+                    </Form>
+                  </>
+                )}
+                {donation.add.status === DonationStatus.DonateDefeated && (
+                  <>
+                    <div>DonateDefeated</div>
+                    <Button
+                      onClick={() => {
+                        refund(donation.add.donateId)
+                      }}
+                    >
+                      refund
+                    </Button>
+                  </>
+                )}
+                {donation.add.status === DonationStatus.DonateSucceeded && (
+                  <>
+                    {metadata?.writerAddress &&
+                    metadata.writerAddress === account ? (
+                      <>
+                        <div>
+                          Target donation amount has been achieved within the
+                          period. Please press the button below to receive it.
+                        </div>
+                        <Button
+                          onClick={() => {
+                            claim(donation.add.donateId)
+                          }}
+                        >
+                          Claim
+                        </Button>
+                      </>
+                    ) : (
+                      <div>
+                        This donation was terminated by achieving the target
+                        amount within the period.
+                      </div>
+                    )}
+                  </>
+                )}
+                {donation.add.status === DonationStatus.DonateComplete && (
+                  <>
+                    {metadata?.writerAddress &&
+                    metadata.writerAddress === account ? (
+                      <>
+                        <div>Please share the details of the donation.</div>
+                        <Form onSubmit={handleSubmit(onSubmit)}>
+                          {detailForm.map((data) => (
+                            <BaseInput
+                              key={data.label}
+                              name={data.name}
+                              type={data.type as InputType}
+                              label={data.label}
+                              multiline={data.multiline || false}
+                              register={register(data.name as InputsKey)}
+                            />
+                          ))}
+                          <LoadingButton
+                            variant='contained'
+                            sx={{
+                              mt: 3,
+                              color: '#ffffff',
+                              fontWeight: 'bold',
+                              fontSize: '1.1rem',
+                            }}
+                            type='submit'
+                          >
+                            Submit
+                          </LoadingButton>
+                        </Form>
+                      </>
+                    ) : (
+                      <>
+                        <div>
+                          The donation was successfully completed and the
+                          recipient received the donation.
+                        </div>
+                        {metadata?.reviewContents && (
+                          <Box sx={{ display: 'flex', margin: '0 auto' }}>
+                            <AutoPlaySwipeableViews
+                              interval={3000}
+                              autoPlay={false}
+                              axis={
+                                theme.direction === 'rtl' ? 'x-reverse' : 'x'
+                              }
+                              index={activeStep}
+                              // onChangeIndex={handleStepChange}
+                              enableMouseEvents
+                              style={{
+                                width: '250px',
+                                marginRight: '10px',
+                              }}
+                            >
+                              {metadata?.reviewImgs &&
+                                metadata.reviewImgs.map((o, index) => (
+                                  <div key={index}>
+                                    {Math.abs(activeStep - index) <= 2 ? (
+                                      <Box
+                                        component='img'
+                                        src={o}
+                                        sx={{
+                                          backgroundSize: 'contain',
+                                          backgroundPosition: 'center center',
+                                          borderRadius: 2,
+                                        }}
+                                        width={250}
+                                        height={250}
+                                      />
+                                    ) : null}
+                                  </div>
+                                ))}
+                            </AutoPlaySwipeableViews>
+                            <div>{metadata?.reviewContents}</div>
+                          </Box>
+                        )}
+                      </>
+                    )}
+                  </>
+                )}
+                {donation.add.status === DonationStatus.DonateRefunded && (
+                  <Typography>
+                    The donation was returned because the donation failed.
+                  </Typography>
+                )}
+                {donation.add.status === DonationStatus.Unknown && (
+                  <div>Unknown...</div>
+                )}
+              </>
+            )}
+          </Box>
         </>
       )}
     </>
@@ -468,3 +550,15 @@ const Form = styled.form`
   justify-content: center;
   align-items: center;
 `
+
+const BorderLinearProgress = styled(LinearProgress)(({ theme }) => ({
+  height: 10,
+  borderRadius: 5,
+  [`&.${linearProgressClasses.colorPrimary}`]: {
+    backgroundColor: 'gray',
+  },
+  [`& .${linearProgressClasses.bar}`]: {
+    borderRadius: 5,
+    backgroundColor: 'darkgray',
+  },
+}))

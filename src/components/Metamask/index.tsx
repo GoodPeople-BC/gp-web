@@ -11,6 +11,7 @@ import { doCopy } from '../../utils/doCopy'
 const Metamask = () => {
   const [account, setAccount] = useRecoilState(accountState)
   const [chainId, setChainId] = useRecoilState(chainIdState)
+  console.log('🚀 ~ file: index.tsx:14 ~ Metamask ~ chainId', chainId)
 
   const connectToMetamask = async () => {
     const provider = new ethers.providers.Web3Provider(window.ethereum, 'any')
@@ -40,24 +41,35 @@ const Metamask = () => {
     }
   })
 
-  const handleNetworkChanged = (id: string) => {
-    setChainId(Number(id))
-  }
-
   useEffect(() => {
     window.ethereum.on('chainChanged', (res: string) =>
-      handleNetworkChanged(res)
+      document.location.reload()
     )
     return () => {
       window.ethereum.removeListener('chainChanged', (res: string) =>
-        handleNetworkChanged(res)
+        document.location.reload()
       )
     }
-  })
+  }, [])
 
   useEffect(() => {
     connectToMetamask()
   }, [])
+
+  const changeChain = async () => {
+    const tx = await window.ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: '0x13881' }],
+    })
+
+    return tx
+  }
+
+  useEffect(() => {
+    if (chainId !== 80001) {
+      changeChain()
+    }
+  }, [chainId])
 
   return (
     <>

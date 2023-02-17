@@ -5,6 +5,11 @@
         "internalType": "contract IVotes",
         "name": "_token",
         "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_blockTime",
+        "type": "uint256"
       }
     ],
     "stateMutability": "nonpayable",
@@ -549,6 +554,30 @@
       }
     ],
     "name": "getVotesWithParams",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "proposalId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "getVotingBalance",
     "outputs": [
       {
         "internalType": "uint256",

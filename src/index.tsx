@@ -14,15 +14,13 @@ const queryClient = new QueryClient()
 root.render(
   <>
     <Global styles={globalStyle} />
-    <React.StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <RecoilRoot>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
-        </RecoilRoot>
-      </QueryClientProvider>
-    </React.StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <RecoilRoot>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </RecoilRoot>
+    </QueryClientProvider>
   </>
 )
 
