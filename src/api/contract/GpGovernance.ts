@@ -14,3 +14,15 @@ export const castVote = async (id: string, support: number) => {
   const GovernanceContract = await getGovernanceContract()
   return GovernanceContract.castVote(id, support)
 }
+
+export const getVotingBalance = async (proposalId: string, account: string) => {
+  const GovernanceContract = await getGovernanceContract()
+  const votingBalance = GovernanceContract.getVotingBalance(proposalId, account)
+  return votingBalance
+}
+
+export const hasVoted = async (proposalId: string, account: string) => {
+  const GovernanceContract = await getGovernanceContract()
+  const hasVoted = GovernanceContract.hasVoted(proposalId, account)
+  return hasVoted
+}
