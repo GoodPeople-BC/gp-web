@@ -13,6 +13,7 @@ import {
   ButtonGroup,
   CircularProgress,
   Divider,
+  InputAdornment,
   LinearProgress,
   linearProgressClasses,
   Skeleton,
@@ -26,13 +27,17 @@ import {
   executeAddDonationProposal,
   getDonationBykey,
 } from '../../api/contract/GPService'
-import { Contract, ethers } from 'ethers'
+import { BigNumber, Contract, ethers } from 'ethers'
 import { useRecoilValue } from 'recoil'
 import { accountState } from '../../atom'
 import ERC20ABI from '../../abi/ERC20ABI.json'
 import { claim, donate, refund } from '../../api/contract/GPVault'
 import { USDC_CA, VAULT_CA } from '../../constants/contract'
-import { castVote, getVotingBalance } from '../../api/contract/GpGovernance'
+import {
+  castVote,
+  getVotingBalance,
+  hasVoted,
+} from '../../api/contract/GpGovernance'
 import Title from '../../components/common/Title'
 import { IRawDonation, IRawVote } from '../../interfaces'
 import RemainingTime from '../../components/RemainingTime'
@@ -239,18 +244,25 @@ const CampaignDetail = () => {
   const endData = donation && new Date(donation.end * 1000)
 
   const [votingBalance, setVotingBalance] = useState(0)
+  const [voted, setVoted] = useState(false)
 
   useEffect(() => {
-    donation?.add.proposalId &&
-      getVotingBalance(donation?.add.proposalId, account).then((res) => {
-        console.log(res.toString())
-        setVotingBalance(res.toString() / 10 ** 18)
-      })
+    if (!donation?.add.proposalId) return
+    getVotingBalance(donation?.add.proposalId, account).then(
+      (res: BigNumber) => {
+        console.log(res)
+
+        setVotingBalance(Number(res.toString()) / 10 ** 18)
+      }
+    )
+    hasVoted(donation?.add.proposalId, account).then((res: boolean) => {
+      setVoted(res)
+    })
   }, [account, donation])
 
   return (
     <>
-      {!metadata ? (
+      {!metadata || !donation ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
           <CircularProgress />
         </Box>
@@ -324,41 +336,56 @@ const CampaignDetail = () => {
                   ))}
               </AutoPlaySwipeableViews>
             )}
-            <Box width={400}>
+            <Box sx={{ my: 2 }}>
+              <Box width={300} sx={{ m: '0 auto', mb: 2 }}>
+                <Typography>
+                  Goal Amount:{' '}
+                  {(donation.maxAmount / 10 ** 6).toLocaleString('en')} USDC
+                </Typography>
+                <Typography>
+                  Period: {(donation.end - donation.start) / 24 / 60 / 60 - 1}{' '}
+                  days
+                </Typography>
+              </Box>
               <Typography sx={{ mb: 1 }}>{metadata?.description}</Typography>
-
               {donation?.add.status && (
                 <>
-                  <BorderLinearProgress
-                    variant='determinate'
-                    value={
-                      donation.add.status === DonationStatus.DonateComplete
-                        ? 100
-                        : donation?.currentAmount && donation?.maxAmount
-                        ? donation?.currentAmount / donation?.maxAmount
-                        : 10
-                    }
-                  />
-                  <Typography sx={{ textAlign: 'right' }}>
-                    {donation.add.status === DonationStatus.DonateComplete
-                      ? (donation?.maxAmount / 10 ** 6).toLocaleString('en')
-                      : donation?.currentAmount
-                      ? (donation?.currentAmount / 10 ** 6).toLocaleString('en')
-                      : 0}{' '}
-                    /
-                    {donation?.maxAmount &&
-                      (donation?.maxAmount / 10 ** 6).toLocaleString('en')}{' '}
-                    USDC
-                  </Typography>
-                  {/* <Typography>start: {startData?.toUTCString()}</Typography> */}
-                  {/* <Typography>end: {endData?.toUTCString()}</Typography> */}
-                  {donation.add.status === DonationStatus.Voting && (
-                    <VotingTime
-                      timeLock={Number(donation.add.createdAt)}
-                      period={Number(donation.add.period)}
-                    />
+                  {donation.add.status === DonationStatus.Voting ? (
+                    <>
+                      <VotingTime
+                        timeLock={Number(donation.add.createdAt)}
+                        period={Number(donation.add.period)}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <BorderLinearProgress
+                        variant='determinate'
+                        value={
+                          donation.add.status === DonationStatus.DonateComplete
+                            ? 100
+                            : Number(donation?.currentAmount) /
+                              Number(donation?.maxAmount)
+                        }
+                      />
+                      <Typography sx={{ textAlign: 'right' }}>
+                        {donation.add.status === DonationStatus.DonateComplete
+                          ? (donation?.maxAmount / 10 ** 6).toLocaleString('en')
+                          : donation?.currentAmount
+                          ? (donation?.currentAmount / 10 ** 6).toLocaleString(
+                              'en'
+                            )
+                          : 0}{' '}
+                        /
+                        {donation?.maxAmount &&
+                          (donation?.maxAmount / 10 ** 6).toLocaleString(
+                            'en'
+                          )}{' '}
+                        USDC
+                      </Typography>
+                    </>
                   )}
-                  {donation.add.status !== DonationStatus.VoteDefeated && (
+                  {donation.add.status === DonationStatus.Donating && (
                     <RemainingTime end={donation.end} />
                   )}
                 </>
@@ -372,20 +399,24 @@ const CampaignDetail = () => {
                 {donation.add.status === DonationStatus.Voting && (
                   <Box>
                     <Typography>Voting Balance: {votingBalance}</Typography>
-                    <ButtonGroup variant='contained'>
-                      <Button onClick={() => onClickVote(1)}>
-                        👍 like (
-                        {donation?.add.voteYes &&
-                          Number(donation?.add.voteYes) / 10 ** 18}
-                        )
-                      </Button>
-                      <Button onClick={() => onClickVote(0)}>
-                        👎 dislike(
-                        {donation?.add.voteYes &&
-                          Number(donation?.add.voteNo) / 10 ** 18}
-                        )
-                      </Button>
-                    </ButtonGroup>
+                    {voted ? (
+                      <Typography>You've already voted.</Typography>
+                    ) : (
+                      <ButtonGroup variant='contained'>
+                        <Button onClick={() => onClickVote(1)}>
+                          👍 like (
+                          {donation?.add.voteYes &&
+                            Number(donation?.add.voteYes) / 10 ** 18}
+                          )
+                        </Button>
+                        <Button onClick={() => onClickVote(0)}>
+                          👎 dislike(
+                          {donation?.add.voteYes &&
+                            Number(donation?.add.voteNo) / 10 ** 18}
+                          )
+                        </Button>
+                      </ButtonGroup>
+                    )}
                   </Box>
                 )}
                 {donation.add.status === DonationStatus.VoteDefeated && (
@@ -430,17 +461,24 @@ const CampaignDetail = () => {
                       Donations are available. Enter the amount to donate and
                       donate.
                     </Typography>
-                    <Form onSubmit={handleDonationSubmit(onDonationSubmit)}>
+                    <DonationForm
+                      onSubmit={handleDonationSubmit(onDonationSubmit)}
+                    >
                       <TextField
                         required
                         type='number'
                         label='amount'
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position='end'>USDC</InputAdornment>
+                          ),
+                        }}
                         {...donationRegister('amount', { required: true })}
                       />
                       <LoadingButton
                         variant='contained'
                         sx={{
-                          mt: 3,
+                          ml: 2,
                           color: '#ffffff',
                           fontWeight: 'bold',
                           fontSize: '1.1rem',
@@ -449,7 +487,7 @@ const CampaignDetail = () => {
                       >
                         Donate
                       </LoadingButton>
-                    </Form>
+                    </DonationForm>
                   </Box>
                 )}
                 {donation.add.status === DonationStatus.DonateDefeated && (
@@ -490,7 +528,62 @@ const CampaignDetail = () => {
                   </>
                 )}
                 {donation.add.status === DonationStatus.DonateComplete && (
-                  <>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Typography sx={{ mb: 1 }}>
+                        The donation was successfully completed and the
+                        recipient received the donation.
+                      </Typography>
+                      {metadata?.reviewContents && (
+                        <Box sx={{ display: 'flex', margin: '0 auto' }}>
+                          <AutoPlaySwipeableViews
+                            interval={3000}
+                            autoPlay={false}
+                            axis={theme.direction === 'rtl' ? 'x-reverse' : 'x'}
+                            index={activeStep}
+                            enableMouseEvents
+                            style={{
+                              width: '250px',
+                              marginRight: '10px',
+                            }}
+                          >
+                            {metadata?.reviewImgs &&
+                              metadata.reviewImgs.map((o, index) => (
+                                <div key={index}>
+                                  {Math.abs(activeStep - index) <= 2 ? (
+                                    <Box
+                                      component='img'
+                                      src={o}
+                                      sx={{
+                                        backgroundSize: 'contain',
+                                        backgroundPosition: 'center center',
+                                        borderRadius: 2,
+                                      }}
+                                      width={250}
+                                      height={250}
+                                    />
+                                  ) : null}
+                                </div>
+                              ))}
+                          </AutoPlaySwipeableViews>
+                          <div>{metadata?.reviewContents}</div>
+                        </Box>
+                      )}
+                    </Box>
                     {metadata?.writerAddress &&
                       metadata.writerAddress === account && (
                         <Box
@@ -498,6 +591,7 @@ const CampaignDetail = () => {
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'center',
+                            mt: 5,
                           }}
                         >
                           <Typography sx={{ mb: 1 }}>
@@ -531,49 +625,7 @@ const CampaignDetail = () => {
                           </Form>
                         </Box>
                       )}
-                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                      <Typography sx={{ mb: 1 }}>
-                        The donation was successfully completed and the
-                        recipient received the donation.
-                      </Typography>
-                      {metadata?.reviewContents && (
-                        <Box sx={{ display: 'flex', margin: '0 auto' }}>
-                          <AutoPlaySwipeableViews
-                            interval={3000}
-                            autoPlay={false}
-                            axis={theme.direction === 'rtl' ? 'x-reverse' : 'x'}
-                            index={activeStep}
-                            // onChangeIndex={handleStepChange}
-                            enableMouseEvents
-                            style={{
-                              width: '250px',
-                              marginRight: '10px',
-                            }}
-                          >
-                            {metadata?.reviewImgs &&
-                              metadata.reviewImgs.map((o, index) => (
-                                <div key={index}>
-                                  {Math.abs(activeStep - index) <= 2 ? (
-                                    <Box
-                                      component='img'
-                                      src={o}
-                                      sx={{
-                                        backgroundSize: 'contain',
-                                        backgroundPosition: 'center center',
-                                        borderRadius: 2,
-                                      }}
-                                      width={250}
-                                      height={250}
-                                    />
-                                  ) : null}
-                                </div>
-                              ))}
-                          </AutoPlaySwipeableViews>
-                          <div>{metadata?.reviewContents}</div>
-                        </Box>
-                      )}
-                    </Box>
-                  </>
+                  </Box>
                 )}
                 {donation.add.status === DonationStatus.DonateRefunded && (
                   <Typography>
@@ -593,6 +645,11 @@ const CampaignDetail = () => {
 }
 
 export default CampaignDetail
+
+const DonationForm = styled.form`
+  display: flex;
+  align-items: stretch;
+`
 
 const Form = styled.form`
   display: flex;

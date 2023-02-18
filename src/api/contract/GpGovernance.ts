@@ -20,3 +20,9 @@ export const getVotingBalance = async (proposalId: string, account: string) => {
   const votingBalance = GovernanceContract.getVotingBalance(proposalId, account)
   return votingBalance
 }
+
+export const hasVoted = async (proposalId: string, account: string) => {
+  const GovernanceContract = await getGovernanceContract()
+  const hasVoted = GovernanceContract.hasVoted(proposalId, account)
+  return hasVoted
+}

@@ -1,5 +1,5 @@
 import styled from '@emotion/styled'
-import { Typography } from '@mui/material'
+import { Alert, Typography } from '@mui/material'
 import { useEffect, useState } from 'react'
 
 const VotingTime = ({
@@ -43,16 +43,13 @@ const VotingTime = ({
     }
   }, [])
   return (
-    <>
-      <Typography sx={{ fontSize: 12, color: 'gray' }}>
-        Time Remaining Before End of Voting
+    <Alert severity='info' sx={{ mt: 1 }}>
+      <Typography sx={{ fontSize: 16, color: 'gray', textAlign: 'center' }}>
+        {hours !== 0 || minutes !== 0 || seconds !== 0
+          ? `There are about ${minutes} minute(s) left until the vote is over.`
+          : 'The vote will end soon.'}
       </Typography>
-      <Container>
-        <Span>{hours.toString().padStart(2, '0')}</Span> h
-        <Span>{minutes.toString().padStart(2, '0')}</Span> m
-        <Span>{seconds.toString().padStart(2, '0')}</Span> s
-      </Container>
-    </>
+    </Alert>
   )
 }
 

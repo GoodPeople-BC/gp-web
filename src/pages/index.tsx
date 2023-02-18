@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react'
 import Title from '../components/common/Title'
 import { sponsorGp } from '../api/contract/GPVault'
 import { IRawDonation } from '../interfaces'
-import { Contract, ethers } from 'ethers'
+import { BigNumber, Contract, ethers } from 'ethers'
 import { USDC_CA, VAULT_CA } from '../constants/contract'
 import ERC20ABI from '../abi/ERC20ABI.json'
 import { useRecoilValue } from 'recoil'
@@ -48,13 +48,24 @@ const HomePage = () => {
     const provider = new ethers.providers.Web3Provider(window.ethereum, 'any')
     const signer = provider.getSigner()
     const usdcContract = new Contract(USDC_CA, ERC20ABI, signer)
-
-    const allowance = await usdcContract.allowance(account, VAULT_CA)
-    //todo 수정
-    if (allowance.toString() / 10 ** 6 < 1) {
-      usdcContract.approve(VAULT_CA, 1 * 10 ** 6)
-    }
-    sponsorGp(1 * 10 ** 6)
+    const amount = 1 * 10 ** 6 // 1개씩
+    usdcContract.allowance(account, VAULT_CA).then((res: BigNumber) => {
+      if (Number(res.toString()) < amount) {
+        usdcContract.approve(VAULT_CA, amount).then(() => {
+          sponsorGp(amount)
+        })
+      } else {
+        sponsorGp(amount)
+      }
+    })
+    // const allowance = await usdcContract.allowance(account, VAULT_CA)
+    // if (allowance.toString() < amount) {
+    //   usdcContract.approve(VAULT_CA, amount).then(() => {
+    //     sponsorGp(amount)
+    //   })
+    // } else {
+    //   sponsorGp(amount)
+    // }
   }
 
   return (
