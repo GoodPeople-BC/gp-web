@@ -7,11 +7,9 @@ import { useEffect, useState } from 'react'
 import Title from '../components/common/Title'
 import { sponsorGp } from '../api/contract/GPVault'
 import { IRawDonation } from '../interfaces'
-import { BigNumber, Contract, ethers } from 'ethers'
+import { Contract, ethers } from 'ethers'
 import { USDC_CA, VAULT_CA } from '../constants/contract'
 import ERC20ABI from '../abi/ERC20ABI.json'
-import { useRecoilValue } from 'recoil'
-import { accountState } from '../atom'
 
 const HomePage = () => {
   const [state, setState] = useState<string[]>()
@@ -42,21 +40,13 @@ const HomePage = () => {
     return arr
   }
 
-  const account = useRecoilValue(accountState)
-
   const getGPT = async () => {
     const provider = new ethers.providers.Web3Provider(window.ethereum, 'any')
     const signer = provider.getSigner()
     const usdcContract = new Contract(USDC_CA, ERC20ABI, signer)
     const amount = 1 * 10 ** 6 // 1개씩
-    usdcContract.allowance(account, VAULT_CA).then((res: BigNumber) => {
-      if (Number(res.toString()) < amount) {
-        usdcContract.approve(VAULT_CA, amount).then(() => {
-          sponsorGp(amount)
-        })
-      } else {
-        sponsorGp(amount)
-      }
+    usdcContract.approve(VAULT_CA, amount).then(() => {
+      sponsorGp(amount)
     })
   }
 
