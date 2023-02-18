@@ -59,7 +59,7 @@ export const getMetadataByName = async (
 export const getMetadata = async (
   keys: string[]
 ): Promise<IGetMetadataResp[]> => {
-  const data = keys.map((k) => `name=${k}&`)
+  const data = keys.map((k) => `name[]=${k}&`)
   return await axios
     .get(`${process.env.REACT_APP_API_SERVER}/campaign?${data.join('')}`)
     .then(({ data }) => {
