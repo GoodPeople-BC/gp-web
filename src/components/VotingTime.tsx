@@ -44,7 +44,9 @@ const VotingTime = ({
     <Alert severity='info' sx={{ mt: 1 }}>
       <Typography sx={{ fontSize: 16, color: 'gray', textAlign: 'center' }}>
         {hours !== 0 || minutes !== 0 || seconds !== 0
-          ? `There are about ${minutes} minute(s) left until the vote is over.`
+          ? `There are about ${
+              hours !== 0 ? `${hours} hour(s)` : ''
+            } ${minutes} minute(s) left until the vote is over.`
           : 'The vote will end soon.'}
       </Typography>
     </Alert>
