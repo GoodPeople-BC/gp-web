@@ -21,7 +21,6 @@ const HomePage = () => {
   useEffect(() => {
     getDonationList().then((res: IRawDonation[]) => {
       console.log(res)
-
       const arr: string[] = []
       for (let i = 0; i < res.length; i++) {
         arr.push(res[i].ipfsKey)
@@ -52,13 +51,10 @@ const HomePage = () => {
 
     const allowance = await usdcContract.allowance(account, VAULT_CA)
     //todo 수정
-    // if (allowance.toString() / 10 ** 6 < 1) {
-    await usdcContract.approve(VAULT_CA, 1 * 10 ** 6).then(() => {
-      sponsorGp(1 * 10 ** 6)
-    })
-    // } else {
-    // sponsorGp(1 * 10 ** 6)
-    // }
+    if (allowance.toString() / 10 ** 6 < 1) {
+      usdcContract.approve(VAULT_CA, 1 * 10 ** 6)
+    }
+    sponsorGp(1 * 10 ** 6)
   }
 
   return (
