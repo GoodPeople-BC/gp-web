@@ -1,2 +1,0 @@
-# gp-web
-gp-web
