@@ -61,7 +61,12 @@ const CampaignCreate = () => {
 
   // * metamask address
   const account = useRecoilValue(accountState)
+  const [addressDefault, setAddressDefault] = useState('')
+  useEffect(() => {
+    console.log(account)
 
+    account !== '0x00' && setAddressDefault(account)
+  }, [account])
   // * react hook form settings
   const {
     register,
@@ -71,9 +76,9 @@ const CampaignCreate = () => {
     defaultValues: {
       title: '',
       description: '',
-      writerAddress: '',
-      goalAmount: '',
-      period: '',
+      writerAddress: addressDefault,
+      goalAmount: '10000000',
+      period: '1209600',
       img1: undefined,
       img2: undefined,
       img3: undefined,
@@ -83,10 +88,12 @@ const CampaignCreate = () => {
   const navigate = useNavigate()
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     // * create formData
+    console.log(data)
+
     const formData = new FormData()
     formData.append('title', data.title)
     formData.append('description', data.description)
-    formData.append('writerAddress', account)
+    formData.append('writerAddress', data.writerAddress)
     formData.append('img1', data.img1[0])
     data.img2 && formData.append('img2', data.img2[0])
     data.img3 && formData.append('img3', data.img3[0])
@@ -203,64 +210,66 @@ const CampaignCreate = () => {
       <Title subTitle='Once you submit the form, the vote will proceed.'>
         Create Campaign
       </Title>
-      <Form onSubmit={handleSubmit(onSubmit)}>
-        {createCampaignForm.map((data) =>
-          data.type !== 'radio' ? (
-            <BaseInput
-              key={data.label}
-              name={data.name}
-              type={data.type as InputType}
-              label={data.label}
-              multiline={data.multiline || false}
-              defaultValue={data.defaultValue}
-              register={register(data.name as InputsKey)}
-            />
-          ) : (
-            data.radioDatas && (
-              <BaseRadioGroup
+      {account !== '0x00' && (
+        <Form onSubmit={handleSubmit(onSubmit)}>
+          {createCampaignForm.map((data) =>
+            data.type !== 'radio' ? (
+              <BaseInput
                 key={data.label}
                 name={data.name}
+                type={data.type as InputType}
                 label={data.label}
-                defaultValue={
-                  data.defaultValue
-                    ? data.defaultValue
-                    : data.radioDatas[0].value
-                }
-                radioDatas={data.radioDatas}
+                multiline={data.multiline || false}
+                defaultValue={data.defaultValue}
                 register={register(data.name as InputsKey)}
               />
+            ) : (
+              data.radioDatas && (
+                <BaseRadioGroup
+                  key={data.label}
+                  name={data.name}
+                  label={data.label}
+                  defaultValue={
+                    data.defaultValue
+                      ? data.defaultValue
+                      : data.radioDatas[0].value
+                  }
+                  radioDatas={data.radioDatas}
+                  register={register(data.name as InputsKey)}
+                />
+              )
             )
-          )
-        )}
-        <Alert
-          icon={
-            <Checkbox
-              checked={checked}
-              onChange={handleChange}
-              inputProps={{ 'aria-label': 'controlled' }}
-            />
-          }
-          severity='info'
-        >
-          If you submit the form, the agenda will be registered for review, and
-          if you pass the governance vote, you will have to press the button
-          directly on the detail page to make it donationable, and if you fail
-          to pass the vote, the agenda will be deleted.
-        </Alert>
-        <LoadingButton
-          variant='contained'
-          sx={{
-            mt: 3,
-            color: '#ffffff',
-            fontWeight: 'bold',
-            fontSize: '1.1rem',
-          }}
-          type='submit'
-          disabled={!checked}
-        >
-          Submit
-        </LoadingButton>
-      </Form>
+          )}
+          <Alert
+            icon={
+              <Checkbox
+                checked={checked}
+                onChange={handleChange}
+                inputProps={{ 'aria-label': 'controlled' }}
+              />
+            }
+            severity='info'
+          >
+            If you submit the form, the agenda will be registered for review,
+            and if you pass the governance vote, you will have to press the
+            button directly on the detail page to make it donationable, and if
+            you fail to pass the vote, the agenda will be deleted.
+          </Alert>
+          <LoadingButton
+            variant='contained'
+            sx={{
+              mt: 3,
+              color: '#ffffff',
+              fontWeight: 'bold',
+              fontSize: '1.1rem',
+            }}
+            type='submit'
+            disabled={!checked}
+          >
+            Submit
+          </LoadingButton>
+        </Form>
+      )}
     </>
   )
 }

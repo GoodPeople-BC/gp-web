@@ -32,10 +32,11 @@ import { accountState } from '../../atom'
 import ERC20ABI from '../../abi/ERC20ABI.json'
 import { claim, donate, refund } from '../../api/contract/GPVault'
 import { USDC_CA, VAULT_CA } from '../../constants/contract'
-import { castVote } from '../../api/contract/GpGovernance'
+import { castVote, getVotingBalance } from '../../api/contract/GpGovernance'
 import Title from '../../components/common/Title'
 import { IRawDonation, IRawVote } from '../../interfaces'
 import RemainingTime from '../../components/RemainingTime'
+import VotingTime from '../../components/VotingTime'
 
 enum DonationStatus {
   False,
@@ -237,6 +238,16 @@ const CampaignDetail = () => {
   const startData = donation && new Date(donation.start * 1000)
   const endData = donation && new Date(donation.end * 1000)
 
+  const [votingBalance, setVotingBalance] = useState(0)
+
+  useEffect(() => {
+    donation?.add.proposalId &&
+      getVotingBalance(donation?.add.proposalId, account).then((res) => {
+        console.log(res.toString())
+        setVotingBalance(res.toString() / 10 ** 18)
+      })
+  }, [account, donation])
+
   return (
     <>
       {!metadata ? (
@@ -341,6 +352,12 @@ const CampaignDetail = () => {
                   </Typography>
                   {/* <Typography>start: {startData?.toUTCString()}</Typography> */}
                   {/* <Typography>end: {endData?.toUTCString()}</Typography> */}
+                  {donation.add.status === DonationStatus.Voting && (
+                    <VotingTime
+                      timeLock={Number(donation.add.createdAt)}
+                      period={Number(donation.add.period)}
+                    />
+                  )}
                   {donation.add.status !== DonationStatus.VoteDefeated && (
                     <RemainingTime end={donation.end} />
                   )}
@@ -353,20 +370,23 @@ const CampaignDetail = () => {
             {donation?.add.status && (
               <>
                 {donation.add.status === DonationStatus.Voting && (
-                  <ButtonGroup variant='contained'>
-                    <Button onClick={() => onClickVote(1)}>
-                      👍 like (
-                      {donation?.add.voteYes &&
-                        Number(donation?.add.voteYes) / 10 ** 18}
-                      )
-                    </Button>
-                    <Button onClick={() => onClickVote(0)}>
-                      👎 dislike(
-                      {donation?.add.voteYes &&
-                        Number(donation?.add.voteNo) / 10 ** 18}
-                      )
-                    </Button>
-                  </ButtonGroup>
+                  <Box>
+                    <Typography>Voting Balance: {votingBalance}</Typography>
+                    <ButtonGroup variant='contained'>
+                      <Button onClick={() => onClickVote(1)}>
+                        👍 like (
+                        {donation?.add.voteYes &&
+                          Number(donation?.add.voteYes) / 10 ** 18}
+                        )
+                      </Button>
+                      <Button onClick={() => onClickVote(0)}>
+                        👎 dislike(
+                        {donation?.add.voteYes &&
+                          Number(donation?.add.voteNo) / 10 ** 18}
+                        )
+                      </Button>
+                    </ButtonGroup>
+                  </Box>
                 )}
                 {donation.add.status === DonationStatus.VoteDefeated && (
                   <div>
@@ -399,8 +419,17 @@ const CampaignDetail = () => {
                   <div>DonateWaiting...</div>
                 )}
                 {donation.add.status === DonationStatus.Donating && (
-                  <>
-                    <div>Donating</div>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Typography sx={{ mb: 1 }}>
+                      Donations are available. Enter the amount to donate and
+                      donate.
+                    </Typography>
                     <Form onSubmit={handleDonationSubmit(onDonationSubmit)}>
                       <TextField
                         required
@@ -421,11 +450,21 @@ const CampaignDetail = () => {
                         Donate
                       </LoadingButton>
                     </Form>
-                  </>
+                  </Box>
                 )}
                 {donation.add.status === DonationStatus.DonateDefeated && (
-                  <>
-                    <div>DonateDefeated</div>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Typography sx={{ mb: 1 }}>
+                      The target donation was not collected during the donation
+                      period. Click the button below so that the donation can be
+                      refunded.
+                    </Typography>
                     <Button
                       onClick={() => {
                         refund(donation.add.donateId)
@@ -433,119 +472,107 @@ const CampaignDetail = () => {
                     >
                       refund
                     </Button>
-                  </>
+                  </Box>
                 )}
                 {donation.add.status === DonationStatus.DonateSucceeded && (
                   <>
-                    {metadata?.writerAddress &&
-                    metadata.writerAddress === account ? (
-                      <>
-                        <div>
-                          Target donation amount has been achieved within the
-                          period. Please press the button below to receive it.
-                        </div>
-                        <Button
-                          onClick={() => {
-                            claim(donation.add.donateId)
-                          }}
-                        >
-                          Claim
-                        </Button>
-                      </>
-                    ) : (
-                      <div>
-                        This donation was terminated by achieving the target
-                        amount within the period.
-                      </div>
-                    )}
+                    <div>
+                      Target donation amount has been achieved within the
+                      period. Please press the button below to receive it.
+                    </div>
+                    <Button
+                      onClick={() => {
+                        claim(donation.add.donateId)
+                      }}
+                    >
+                      Claim
+                    </Button>
                   </>
                 )}
                 {donation.add.status === DonationStatus.DonateComplete && (
                   <>
                     {metadata?.writerAddress &&
-                    metadata.writerAddress === account ? (
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <Typography sx={{ mb: 1 }}>
-                          Please share your review after receiving the donation.
-                        </Typography>
-                        <Form onSubmit={handleSubmit(onSubmit)}>
-                          {detailForm.map((data) => (
-                            <BaseInput
-                              key={data.label}
-                              name={data.name}
-                              type={data.type as InputType}
-                              label={data.label}
-                              multiline={data.multiline || false}
-                              defaultValue={data.defaultValue}
-                              register={register(data.name as InputsKey)}
-                            />
-                          ))}
-                          <LoadingButton
-                            variant='contained'
-                            sx={{
-                              mt: 3,
-                              color: '#ffffff',
-                              fontWeight: 'bold',
-                              fontSize: '1.1rem',
-                            }}
-                            type='submit'
-                          >
-                            Submit
-                          </LoadingButton>
-                        </Form>
-                      </Box>
-                    ) : (
-                      <>
-                        <div>
-                          The donation was successfully completed and the
-                          recipient received the donation.
-                        </div>
-                        {metadata?.reviewContents && (
-                          <Box sx={{ display: 'flex', margin: '0 auto' }}>
-                            <AutoPlaySwipeableViews
-                              interval={3000}
-                              autoPlay={false}
-                              axis={
-                                theme.direction === 'rtl' ? 'x-reverse' : 'x'
-                              }
-                              index={activeStep}
-                              // onChangeIndex={handleStepChange}
-                              enableMouseEvents
-                              style={{
-                                width: '250px',
-                                marginRight: '10px',
+                      metadata.writerAddress === account && (
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <Typography sx={{ mb: 1 }}>
+                            Please share your review after receiving the
+                            donation.
+                          </Typography>
+                          <Form onSubmit={handleSubmit(onSubmit)}>
+                            {detailForm.map((data) => (
+                              <BaseInput
+                                key={data.label}
+                                name={data.name}
+                                type={data.type as InputType}
+                                label={data.label}
+                                multiline={data.multiline || false}
+                                defaultValue={data.defaultValue}
+                                register={register(data.name as InputsKey)}
+                              />
+                            ))}
+                            <LoadingButton
+                              variant='contained'
+                              sx={{
+                                mt: 3,
+                                color: '#ffffff',
+                                fontWeight: 'bold',
+                                fontSize: '1.1rem',
                               }}
+                              type='submit'
                             >
-                              {metadata?.reviewImgs &&
-                                metadata.reviewImgs.map((o, index) => (
-                                  <div key={index}>
-                                    {Math.abs(activeStep - index) <= 2 ? (
-                                      <Box
-                                        component='img'
-                                        src={o}
-                                        sx={{
-                                          backgroundSize: 'contain',
-                                          backgroundPosition: 'center center',
-                                          borderRadius: 2,
-                                        }}
-                                        width={250}
-                                        height={250}
-                                      />
-                                    ) : null}
-                                  </div>
-                                ))}
-                            </AutoPlaySwipeableViews>
-                            <div>{metadata?.reviewContents}</div>
-                          </Box>
-                        )}
-                      </>
-                    )}
+                              Submit
+                            </LoadingButton>
+                          </Form>
+                        </Box>
+                      )}
+                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                      <Typography sx={{ mb: 1 }}>
+                        The donation was successfully completed and the
+                        recipient received the donation.
+                      </Typography>
+                      {metadata?.reviewContents && (
+                        <Box sx={{ display: 'flex', margin: '0 auto' }}>
+                          <AutoPlaySwipeableViews
+                            interval={3000}
+                            autoPlay={false}
+                            axis={theme.direction === 'rtl' ? 'x-reverse' : 'x'}
+                            index={activeStep}
+                            // onChangeIndex={handleStepChange}
+                            enableMouseEvents
+                            style={{
+                              width: '250px',
+                              marginRight: '10px',
+                            }}
+                          >
+                            {metadata?.reviewImgs &&
+                              metadata.reviewImgs.map((o, index) => (
+                                <div key={index}>
+                                  {Math.abs(activeStep - index) <= 2 ? (
+                                    <Box
+                                      component='img'
+                                      src={o}
+                                      sx={{
+                                        backgroundSize: 'contain',
+                                        backgroundPosition: 'center center',
+                                        borderRadius: 2,
+                                      }}
+                                      width={250}
+                                      height={250}
+                                    />
+                                  ) : null}
+                                </div>
+                              ))}
+                          </AutoPlaySwipeableViews>
+                          <div>{metadata?.reviewContents}</div>
+                        </Box>
+                      )}
+                    </Box>
                   </>
                 )}
                 {donation.add.status === DonationStatus.DonateRefunded && (
