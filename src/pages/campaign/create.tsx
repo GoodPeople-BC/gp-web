@@ -71,9 +71,9 @@ const CampaignCreate = () => {
     defaultValues: {
       title: '',
       description: '',
-      writerAddress: '',
-      goalAmount: '',
-      period: '',
+      writerAddress: account,
+      goalAmount: '10000000',
+      period: '1209600',
       img1: undefined,
       img2: undefined,
       img3: undefined,
@@ -131,7 +131,6 @@ const CampaignCreate = () => {
       label: 'Recipient',
       name: 'writerAddress',
       type: 'text',
-      defaultValue: account,
     },
     {
       label: 'Goal Amount',
@@ -151,7 +150,6 @@ const CampaignCreate = () => {
           value: amounts[2],
         },
       ],
-      defaultValue: 10000000,
     },
     {
       label: 'Period',
@@ -171,7 +169,6 @@ const CampaignCreate = () => {
           value: periods[2],
         },
       ],
-      defaultValue: 1209600,
     },
     {
       name: 'img1',
