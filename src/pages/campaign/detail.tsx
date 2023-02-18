@@ -35,6 +35,7 @@ import { USDC_CA, VAULT_CA } from '../../constants/contract'
 import { castVote } from '../../api/contract/GpGovernance'
 import Title from '../../components/common/Title'
 import { IRawDonation, IRawVote } from '../../interfaces'
+import RemainingTime from '../../components/RemainingTime'
 
 enum DonationStatus {
   False,
@@ -88,6 +89,7 @@ interface IDetaileForm {
   type: InputType
   label: string
   multiline?: boolean
+  defaultValue?: string
 }
 
 const detailForm: IDetaileForm[] = [
@@ -96,6 +98,7 @@ const detailForm: IDetaileForm[] = [
     type: 'text',
     label: 'contents',
     multiline: true,
+    defaultValue: '',
   },
   {
     name: 'img1',
@@ -192,14 +195,14 @@ const CampaignDetail = () => {
       maxAmount: res.maxAmount.toNumber(),
       ipfsKey: res.ipfsKey,
       start: res.start.toNumber(),
-      end: res.start.toNumber(),
+      end: res.end.toNumber(),
     }
   }
 
   useEffect(() => {
     id &&
       getDonationBykey(id).then((res) => {
-        console.log(res, 'res')
+        console.log('🚀 ~ file: detail.tsx:202 ~ getDonationBykey ~ res', res)
         setDonation(convertDonation(res))
       })
   }, [id])
@@ -222,6 +225,7 @@ const CampaignDetail = () => {
         data.amount * 10 ** 6
       )
     }
+
     donate(donation!.add.donateId, data.amount * 10 ** 6)
   }
 
@@ -229,6 +233,9 @@ const CampaignDetail = () => {
     if (!donation?.add.proposalId) return
     castVote(donation?.add.proposalId, support)
   }
+
+  const startData = donation && new Date(donation.start * 1000)
+  const endData = donation && new Date(donation.end * 1000)
 
   return (
     <>
@@ -257,6 +264,7 @@ const CampaignDetail = () => {
           >
             {metadata ? metadata.title : ''}
           </Title>
+
           {/* state 상관없이 제공할 기부 관련 데이터 */}
           <Box
             sx={{
@@ -283,7 +291,6 @@ const CampaignDetail = () => {
                 enableMouseEvents
                 style={{
                   width: '300px',
-                  marginRight: '10px',
                 }}
               >
                 {metadata &&
@@ -307,29 +314,38 @@ const CampaignDetail = () => {
               </AutoPlaySwipeableViews>
             )}
             <Box width={400}>
-              {donation?.add.status && donation?.add.status > 4 && (
+              <Typography sx={{ mb: 1 }}>{metadata?.description}</Typography>
+
+              {donation?.add.status && (
                 <>
                   <BorderLinearProgress
                     variant='determinate'
                     value={
-                      donation?.currentAmount && donation?.maxAmount
+                      donation.add.status === DonationStatus.DonateComplete
+                        ? 100
+                        : donation?.currentAmount && donation?.maxAmount
                         ? donation?.currentAmount / donation?.maxAmount
                         : 10
                     }
                   />
                   <Typography sx={{ textAlign: 'right' }}>
-                    {donation?.currentAmount &&
-                      (donation?.currentAmount / 10 ** 6).toLocaleString(
-                        'en'
-                      )}{' '}
+                    {donation.add.status === DonationStatus.DonateComplete
+                      ? (donation?.maxAmount / 10 ** 6).toLocaleString('en')
+                      : donation?.currentAmount
+                      ? (donation?.currentAmount / 10 ** 6).toLocaleString('en')
+                      : 0}{' '}
                     /
                     {donation?.maxAmount &&
                       (donation?.maxAmount / 10 ** 6).toLocaleString('en')}{' '}
                     USDC
                   </Typography>
+                  {/* <Typography>start: {startData?.toUTCString()}</Typography> */}
+                  {/* <Typography>end: {endData?.toUTCString()}</Typography> */}
+                  {donation.add.status !== DonationStatus.VoteDefeated && (
+                    <RemainingTime end={donation.end} />
+                  )}
                 </>
               )}
-              <p>{metadata?.description}</p>
             </Box>
           </Box>
           <Divider sx={{ my: 2 }} />
@@ -345,7 +361,7 @@ const CampaignDetail = () => {
                       )
                     </Button>
                     <Button onClick={() => onClickVote(0)}>
-                      👎 unlike(
+                      👎 dislike(
                       {donation?.add.voteYes &&
                         Number(donation?.add.voteNo) / 10 ** 18}
                       )
@@ -358,28 +374,26 @@ const CampaignDetail = () => {
                   </div>
                 )}
                 {donation.add.status === DonationStatus.VoteSucceeded && (
-                  <>
-                    {metadata?.writerAddress &&
-                    metadata.writerAddress === account ? (
-                      <>
-                        <Typography>
-                          Press the execute button to start the donation.
-                        </Typography>
-                        <Button
-                          onClick={() => {
-                            executeAddDonationProposal(donation.add.donateId)
-                          }}
-                        >
-                          execute
-                        </Button>
-                      </>
-                    ) : (
-                      <div>
-                        Agenda passed the governance vote. When the proposer
-                        executes the donation, the donation begins.
-                      </div>
-                    )}
-                  </>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Typography sx={{ mb: 2 }}>
+                      The agenda was accepted by the governance vote. Click the
+                      button below to start donating.
+                    </Typography>
+                    <Button
+                      variant='contained'
+                      onClick={() => {
+                        executeAddDonationProposal(donation.add.donateId)
+                      }}
+                    >
+                      execute donation
+                    </Button>
+                  </Box>
                 )}
                 {donation.add.status === DonationStatus.DonateWaiting && (
                   <div>DonateWaiting...</div>
@@ -450,8 +464,16 @@ const CampaignDetail = () => {
                   <>
                     {metadata?.writerAddress &&
                     metadata.writerAddress === account ? (
-                      <>
-                        <div>Please share the details of the donation.</div>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Typography sx={{ mb: 1 }}>
+                          Please share your review after receiving the donation.
+                        </Typography>
                         <Form onSubmit={handleSubmit(onSubmit)}>
                           {detailForm.map((data) => (
                             <BaseInput
@@ -460,6 +482,7 @@ const CampaignDetail = () => {
                               type={data.type as InputType}
                               label={data.label}
                               multiline={data.multiline || false}
+                              defaultValue={data.defaultValue}
                               register={register(data.name as InputsKey)}
                             />
                           ))}
@@ -476,7 +499,7 @@ const CampaignDetail = () => {
                             Submit
                           </LoadingButton>
                         </Form>
-                      </>
+                      </Box>
                     ) : (
                       <>
                         <div>
@@ -555,10 +578,10 @@ const BorderLinearProgress = styled(LinearProgress)(({ theme }) => ({
   height: 10,
   borderRadius: 5,
   [`&.${linearProgressClasses.colorPrimary}`]: {
-    backgroundColor: 'gray',
+    backgroundColor: 'lightgray',
   },
   [`& .${linearProgressClasses.bar}`]: {
     borderRadius: 5,
-    backgroundColor: 'darkgray',
+    backgroundColor: 'gray',
   },
 }))

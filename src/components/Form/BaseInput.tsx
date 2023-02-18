@@ -12,9 +12,9 @@ interface BaseInputProps<T extends FieldValues> {
   register: UseFormRegisterReturn
   name: Path<T>
   type: InputType
-  value?: string
   label: string
   multiline: boolean
+  defaultValue?: string | number
   required?: boolean
   errors?: FieldError
 }
@@ -23,9 +23,9 @@ export default function BaseInput<T extends FieldValues>({
   register,
   name,
   type,
-  value,
   label,
   multiline,
+  defaultValue,
   required,
   errors,
 }: BaseInputProps<T>) {
@@ -45,9 +45,9 @@ export default function BaseInput<T extends FieldValues>({
           id={`form-${name}-${label}`}
           type={type}
           label={label}
-          value={value}
           multiline={multiline}
           rows={multiline ? 5 : 1}
+          defaultValue={defaultValue}
           {...register}
         />
       ) : (

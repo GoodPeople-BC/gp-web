@@ -5,8 +5,6 @@ import styled from '@emotion/styled'
 import { SubmitHandler, useForm } from 'react-hook-form'
 
 import { addCampaign, cancelCampaign } from '../../api/CampaignAPI'
-import { ethers } from 'ethers'
-import { Contract } from '../../utils/Contract'
 import { LoadingButton } from '@mui/lab'
 import BaseRadioGroup from '../../components/Form/BaseRadioGroup'
 import { useRecoilValue } from 'recoil'
@@ -130,9 +128,10 @@ const CampaignCreate = () => {
       multiline: true,
     },
     {
-      label: 'Writer Address',
+      label: 'Recipient',
       name: 'writerAddress',
       type: 'text',
+      defaultValue: account,
     },
     {
       label: 'Goal Amount',
@@ -211,9 +210,9 @@ const CampaignCreate = () => {
               key={data.label}
               name={data.name}
               type={data.type as InputType}
-              value={data.name === 'writerAddress' ? account : undefined}
               label={data.label}
               multiline={data.multiline || false}
+              defaultValue={data.defaultValue}
               register={register(data.name as InputsKey)}
             />
           ) : (
