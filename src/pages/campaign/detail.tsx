@@ -209,8 +209,21 @@ const CampaignDetail = () => {
     const provider = new ethers.providers.Web3Provider(window.ethereum, 'any')
     const signer = provider.getSigner()
     const usdcContract = new Contract(USDC_CA, ERC20ABI, signer)
-    usdcContract.approve(VAULT_CA, data.amount * 10 ** 6).then(() => {
-      donate(donation!.add.donateId, data.amount * 10 ** 6)
+    const amount = data.amount * 10 ** 6
+    const delay = (time: number) => {
+      return new Promise((res) => setTimeout(res, time))
+    }
+    usdcContract.approve(VAULT_CA, amount).then(async () => {
+      for (let i = 0; i < 30; i++) {
+        console.log('run')
+        const allowance = await usdcContract.allowance(account, VAULT_CA)
+        if (allowance.toString() >= amount) {
+          donate(donation!.add.donateId, amount)
+          return
+        } else {
+          await delay(1000)
+        }
+      }
     })
   }
 
@@ -218,9 +231,6 @@ const CampaignDetail = () => {
     if (!donation?.add.proposalId) return
     castVote(donation?.add.proposalId, support)
   }
-
-  const startData = donation && new Date(donation.start * 1000)
-  const endData = donation && new Date(donation.end * 1000)
 
   const [votingBalance, setVotingBalance] = useState(0)
   const [voted, setVoted] = useState(false)

@@ -7,9 +7,12 @@ import { useEffect, useState } from 'react'
 import Title from '../components/common/Title'
 import { sponsorGp } from '../api/contract/GPVault'
 import { IRawDonation } from '../interfaces'
-import { Contract, ethers } from 'ethers'
+import { BigNumber, Contract, ethers } from 'ethers'
 import { USDC_CA, VAULT_CA } from '../constants/contract'
 import ERC20ABI from '../abi/ERC20ABI.json'
+import { useRecoilValue } from 'recoil'
+import { accountState } from '../atom'
+import * as Big from 'bignumber.js'
 
 const HomePage = () => {
   const [state, setState] = useState<string[]>()
@@ -40,14 +43,47 @@ const HomePage = () => {
     return arr
   }
 
+  const account = useRecoilValue(accountState)
+
   const getGPT = async () => {
     const provider = new ethers.providers.Web3Provider(window.ethereum, 'any')
     const signer = provider.getSigner()
     const usdcContract = new Contract(USDC_CA, ERC20ABI, signer)
     const amount = 1 * 10 ** 6 // 1개씩
-    usdcContract.approve(VAULT_CA, amount).then(() => {
-      sponsorGp(amount)
+    const delay = (time: number) => {
+      return new Promise((res) => setTimeout(res, time))
+    }
+    usdcContract.approve(VAULT_CA, amount).then(async () => {
+      for (let i = 0; i < 30; i++) {
+        console.log('run')
+        const allowance = await usdcContract.allowance(account, VAULT_CA)
+        if (allowance.toString() >= amount) {
+          sponsorGp(amount)
+          return
+        } else {
+          await delay(1000)
+        }
+      }
     })
+
+    // const amount = new Big.BigNumber(1 * 10 ** 6) // 1개씩
+    // let allowance = new Big.BigNumber(0)
+
+    // const timer = setInterval(async () => {
+    //   allowance = await usdcContract
+    //     .allowance(account, VAULT_CA)
+    //     .then((res: BigNumber) => {
+    //       return new Big.BigNumber(res.toString())
+    //     })
+    //   if (amount.comparedTo(allowance) === 1) {
+    //     usdcContract.approve(VAULT_CA, amount).then(() => {
+    //       sponsorGp(Number(amount))
+    //     })
+    //   } else {
+    //     sponsorGp(Number(amount))
+    //     clearInterval(timer)
+    //   }
+    // }, 2000)
   }
 
   return (
