@@ -150,6 +150,7 @@ const CampaignCreate = () => {
           value: amounts[2],
         },
       ],
+      defaultValue: '10000000',
     },
     {
       label: 'Period',
@@ -169,6 +170,7 @@ const CampaignCreate = () => {
           value: periods[2],
         },
       ],
+      defaultValue: '1209600',
     },
     {
       name: 'img1',
