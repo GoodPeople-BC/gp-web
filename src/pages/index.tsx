@@ -58,14 +58,6 @@ const HomePage = () => {
         sponsorGp(amount)
       }
     })
-    // const allowance = await usdcContract.allowance(account, VAULT_CA)
-    // if (allowance.toString() < amount) {
-    //   usdcContract.approve(VAULT_CA, amount).then(() => {
-    //     sponsorGp(amount)
-    //   })
-    // } else {
-    //   sponsorGp(amount)
-    // }
   }
 
   return (
