@@ -11,7 +11,6 @@ import { doCopy } from '../../utils/doCopy'
 const Metamask = () => {
   const [account, setAccount] = useRecoilState(accountState)
   const [chainId, setChainId] = useRecoilState(chainIdState)
-  console.log('🚀 ~ file: index.tsx:14 ~ Metamask ~ chainId', chainId)
 
   const connectToMetamask = async () => {
     const provider = new ethers.providers.Web3Provider(window.ethereum, 'any')
@@ -56,18 +55,41 @@ const Metamask = () => {
     connectToMetamask()
   }, [])
 
+  const metaTestMetaData = {
+    chainId: '0x89',
+    chainName: 'Polygon Mainnet',
+    rpcUrls: ['https://polygon-rpc.com/'],
+    blockExplorerUrls: ['https://polygonscan.com'],
+    nativeCurrency: {
+      name: 'MATIC',
+      decimals: 18,
+      symbol: 'MATIC',
+    },
+  }
+
+  const addChain = async () => {
+    const tx = await window.ethereum.request({
+      method: 'wallet_addEthereumChain',
+      params: [metaTestMetaData],
+    })
+    return tx
+  }
+
   const changeChain = async () => {
     const tx = await window.ethereum.request({
       method: 'wallet_switchEthereumChain',
-      params: [{ chainId: '0x13881' }],
+      params: [{ chainId: '0x89' }],
     })
-
     return tx
   }
 
   useEffect(() => {
-    if (chainId !== 80001) {
-      changeChain()
+    if (chainId !== 137) {
+      try {
+        changeChain()
+      } catch {
+        addChain()
+      }
     }
   }, [chainId])
 

@@ -8,7 +8,7 @@ const openDrawerState = atom<boolean>({
 
 const accountState = atom<string>({
   key: `accountState${v1()}`,
-  default: '0x00',
+  default: '',
 })
 
 const chainIdState = atom<number>({

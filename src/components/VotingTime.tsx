@@ -9,8 +9,6 @@ const VotingTime = ({
   timeLock: number
   period: number
 }) => {
-  console.log(timeLock, period)
-
   const [hours, setHours] = useState<number>(0)
   const [minutes, setMinutes] = useState<number>(0)
   const [seconds, setSeconds] = useState<number>(0)

@@ -168,20 +168,6 @@ const CampaignDetail = () => {
     })
   }
 
-  // const maxSteps = 3
-
-  // const handleNext = () => {
-  //   setActiveStep((prevActiveStep) => prevActiveStep + 1)
-  // }
-
-  // const handleBack = () => {
-  //   setActiveStep((prevActiveStep) => prevActiveStep - 1)
-  // }
-
-  // const handleStepChange = (step: number) => {
-  //   setActiveStep(step)
-  // }
-
   const convertVote = (rawVote: IRawVote) => {
     return {
       status: rawVote.canVote.toNumber() + 1,
@@ -208,7 +194,6 @@ const CampaignDetail = () => {
   useEffect(() => {
     id &&
       getDonationBykey(id).then((res) => {
-        console.log('🚀 ~ file: detail.tsx:202 ~ getDonationBykey ~ res', res)
         setDonation(convertDonation(res))
       })
   }, [id])
@@ -224,24 +209,28 @@ const CampaignDetail = () => {
     const provider = new ethers.providers.Web3Provider(window.ethereum, 'any')
     const signer = provider.getSigner()
     const usdcContract = new Contract(USDC_CA, ERC20ABI, signer)
-    const allowance = await usdcContract.allowance(account, VAULT_CA)
-    if (allowance.toString() / 10 ** 6 < data.amount) {
-      const approve = await usdcContract.approve(
-        VAULT_CA,
-        data.amount * 10 ** 6
-      )
+    const amount = data.amount * 10 ** 6
+    const delay = (time: number) => {
+      return new Promise((res) => setTimeout(res, time))
     }
-
-    donate(donation!.add.donateId, data.amount * 10 ** 6)
+    usdcContract.approve(VAULT_CA, amount).then(async () => {
+      for (let i = 0; i < 30; i++) {
+        console.log('run')
+        const allowance = await usdcContract.allowance(account, VAULT_CA)
+        if (allowance.toString() >= amount) {
+          donate(donation!.add.donateId, amount)
+          return
+        } else {
+          await delay(1000)
+        }
+      }
+    })
   }
 
   const onClickVote = (support: number) => {
     if (!donation?.add.proposalId) return
     castVote(donation?.add.proposalId, support)
   }
-
-  const startData = donation && new Date(donation.start * 1000)
-  const endData = donation && new Date(donation.end * 1000)
 
   const [votingBalance, setVotingBalance] = useState(0)
   const [voted, setVoted] = useState(false)
@@ -259,6 +248,8 @@ const CampaignDetail = () => {
       setVoted(res)
     })
   }, [account, donation])
+
+  console.log(donation?.maxAmount, donation?.currentAmount)
 
   return (
     <>
@@ -359,30 +350,45 @@ const CampaignDetail = () => {
                     </>
                   ) : (
                     <>
-                      <BorderLinearProgress
-                        variant='determinate'
-                        value={
-                          donation.add.status === DonationStatus.DonateComplete
-                            ? 100
-                            : Number(donation?.currentAmount) /
-                              Number(donation?.maxAmount)
-                        }
-                      />
-                      <Typography sx={{ textAlign: 'right' }}>
-                        {donation.add.status === DonationStatus.DonateComplete
-                          ? (donation?.maxAmount / 10 ** 6).toLocaleString('en')
-                          : donation?.currentAmount
-                          ? (donation?.currentAmount / 10 ** 6).toLocaleString(
-                              'en'
-                            )
-                          : 0}{' '}
-                        /
-                        {donation?.maxAmount &&
-                          (donation?.maxAmount / 10 ** 6).toLocaleString(
-                            'en'
-                          )}{' '}
-                        USDC
-                      </Typography>
+                      {donation.add.status !== DonationStatus.VoteSucceeded &&
+                        donation.add.status !== DonationStatus.VoteDefeated &&
+                        donation.add.status !== DonationStatus.DonateWaiting &&
+                        donation.add.status !==
+                          DonationStatus.DonateRefunded && (
+                          <>
+                            <BorderLinearProgress
+                              variant='determinate'
+                              value={
+                                donation.add.status ===
+                                DonationStatus.DonateComplete
+                                  ? 100
+                                  : (Number(donation?.currentAmount) /
+                                      Number(donation?.maxAmount)) *
+                                    100
+                              }
+                            />
+                            <Typography sx={{ textAlign: 'right' }}>
+                              {donation.add.status ===
+                              DonationStatus.DonateComplete
+                                ? (
+                                    donation?.maxAmount /
+                                    10 ** 6
+                                  ).toLocaleString('en')
+                                : donation?.currentAmount
+                                ? (
+                                    donation?.currentAmount /
+                                    10 ** 6
+                                  ).toLocaleString('en')
+                                : 0}{' '}
+                              /
+                              {donation?.maxAmount &&
+                                (donation?.maxAmount / 10 ** 6).toLocaleString(
+                                  'en'
+                                )}{' '}
+                              USDC
+                            </Typography>
+                          </>
+                        )}
                     </>
                   )}
                   {donation.add.status === DonationStatus.Donating && (
@@ -398,7 +404,7 @@ const CampaignDetail = () => {
               <>
                 {donation.add.status === DonationStatus.Voting && (
                   <Box>
-                    <Typography>Voting Balance: {votingBalance}</Typography>
+                    <Typography>Voting Power: {votingBalance}</Typography>
                     {voted ? (
                       <Typography>You've already voted.</Typography>
                     ) : (
@@ -458,8 +464,7 @@ const CampaignDetail = () => {
                     }}
                   >
                     <Typography sx={{ mb: 1 }}>
-                      Donations are available. Enter the amount to donate and
-                      donate.
+                      Donations are available.
                     </Typography>
                     <DonationForm
                       onSubmit={handleDonationSubmit(onDonationSubmit)}
