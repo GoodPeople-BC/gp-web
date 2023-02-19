@@ -13,7 +13,6 @@ import ERC20ABI from '../abi/ERC20ABI.json'
 import { useRecoilValue } from 'recoil'
 import { accountState } from '../atom'
 import * as Big from 'bignumber.js'
-import _ from 'lodash'
 
 const HomePage = () => {
   const [state, setState] = useState<string[]>()
@@ -22,11 +21,15 @@ const HomePage = () => {
 
   useEffect(() => {
     getDonationList().then((res: IRawDonation[]) => {
-      const uniqueDonation = _.uniqBy(res, 'ipfsKey')
-      setDonation(uniqueDonation)
+      const newRes = [...res]
+      const reverseUniqueRes = newRes
+        .reverse()
+        .filter((v, i, a) => a.map((e) => e.ipfsKey).indexOf(v.ipfsKey) === i)
+      const uniqueRes = reverseUniqueRes.reverse()
+      setDonation(uniqueRes)
       const arr: string[] = []
-      for (let i = 0; i < uniqueDonation.length; i++) {
-        arr.push(uniqueDonation[i].ipfsKey)
+      for (let i = 0; i < uniqueRes.length; i++) {
+        arr.push(uniqueRes[i].ipfsKey)
       }
       setState(arr)
     })
