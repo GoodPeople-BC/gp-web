@@ -260,7 +260,7 @@ const CampaignDetail = () => {
       ) : (
         <>
           <Title
-            subTitle={`proponent: ${metadata?.writerAddress}`}
+            subTitle={`receipient: ${metadata?.writerAddress}`}
             rightSide={
               <Box sx={{ display: 'flex' }}>
                 <Typography sx={{ mr: 1 }}>
