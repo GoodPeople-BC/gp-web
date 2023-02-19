@@ -22,15 +22,13 @@ const HomePage = () => {
 
   useEffect(() => {
     getDonationList().then((res: IRawDonation[]) => {
-      const arr: string[] = []
-      for (let i = 0; i < res.length; i++) {
-        arr.push(res[i].ipfsKey)
-      }
       const uniqueDonation = _.uniqBy(res, 'ipfsKey')
       setDonation(uniqueDonation)
-      const set = new Set(arr)
-      const uniqueArr = [...set]
-      setState(uniqueArr)
+      const arr: string[] = []
+      for (let i = 0; i < uniqueDonation.length; i++) {
+        arr.push(uniqueDonation[i].ipfsKey)
+      }
+      setState(arr)
     })
   }, [])
 
