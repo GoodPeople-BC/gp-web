@@ -14,11 +14,27 @@ import { useRecoilValue } from 'recoil'
 import { accountState } from '../atom'
 import * as Big from 'bignumber.js'
 
+enum Status {
+  'voting',
+  'rejected',
+  'accepted',
+  'waiting',
+  'donating',
+  'failed',
+  'succeeded',
+  'completed',
+  'refunded',
+  'Unknown',
+}
+
 const HomePage = () => {
   const [state, setState] = useState<string[]>()
   const [donation, setDonation] = useState<IRawDonation[]>()
+  const account = useRecoilValue(accountState)
+
   const { data: metadata, isLoading } = useMetadata(state)
 
+  // get data from contract
   useEffect(() => {
     getDonationList().then((res: IRawDonation[]) => {
       const newRes = [...res]
@@ -35,6 +51,7 @@ const HomePage = () => {
     })
   }, [])
 
+  // merge contract data and ipfs data
   function merge() {
     const arr = []
     const donationLength = donation?.length ?? 0
@@ -47,47 +64,34 @@ const HomePage = () => {
     return arr
   }
 
-  const account = useRecoilValue(accountState)
-
+  // get gpt with usdc
   const getGPT = async () => {
     const provider = new ethers.providers.Web3Provider(window.ethereum, 'any')
     const signer = provider.getSigner()
     const usdcContract = new Contract(USDC_CA, ERC20ABI, signer)
-    const amount = 1 * 10 ** 6 // 1개씩
-    const delay = (time: number) => {
-      return new Promise((res) => setTimeout(res, time))
-    }
-    usdcContract.approve(VAULT_CA, amount).then(async () => {
-      for (let i = 0; i < 30; i++) {
-        console.log('run')
-        const allowance = await usdcContract.allowance(account, VAULT_CA)
-        if (allowance.toString() >= amount) {
-          sponsorGp(amount)
-          return
-        } else {
-          await delay(1000)
+    const amount = new Big.BigNumber(1 * 10 ** 6)
+    let allowance = new Big.BigNumber(0)
+    allowance = await usdcContract
+      .allowance(account, VAULT_CA)
+      .then((res: BigNumber) => {
+        return new Big.BigNumber(res.toString())
+      })
+    if (amount.comparedTo(allowance) !== 1) {
+      sponsorGp(Number(amount))
+    } else {
+      usdcContract.approve(VAULT_CA, Number(amount))
+      const timer = setInterval(async () => {
+        allowance = await usdcContract
+          .allowance(account, VAULT_CA)
+          .then((res: BigNumber) => {
+            return new Big.BigNumber(res.toString())
+          })
+        if (amount.comparedTo(allowance) !== 1) {
+          sponsorGp(Number(amount))
+          clearInterval(timer)
         }
-      }
-    })
-
-    // const amount = new Big.BigNumber(1 * 10 ** 6) // 1개씩
-    // let allowance = new Big.BigNumber(0)
-
-    // const timer = setInterval(async () => {
-    //   allowance = await usdcContract
-    //     .allowance(account, VAULT_CA)
-    //     .then((res: BigNumber) => {
-    //       return new Big.BigNumber(res.toString())
-    //     })
-    //   if (amount.comparedTo(allowance) === 1) {
-    //     usdcContract.approve(VAULT_CA, amount).then(() => {
-    //       sponsorGp(Number(amount))
-    //     })
-    //   } else {
-    //     sponsorGp(Number(amount))
-    //     clearInterval(timer)
-    //   }
-    // }, 2000)
+      }, 2000)
+    }
   }
 
   return (
@@ -139,29 +143,7 @@ const HomePage = () => {
                   }}
                 >
                   <Chip
-                    label={`${
-                      o.add.canVote.toString() === '0'
-                        ? 'voting'
-                        : o.add.canVote.toString() === '1'
-                        ? 'rejected'
-                        : o.add.canVote.toString() === '2'
-                        ? 'accepted'
-                        : o.add.canVote.toString() === '3'
-                        ? 'waiting'
-                        : o.add.canVote.toString() === '4'
-                        ? 'donating'
-                        : o.add.canVote.toString() === '5'
-                        ? 'failed'
-                        : o.add.canVote.toString() === '6'
-                        ? 'succeeded'
-                        : o.add.canVote.toString() === '7'
-                        ? 'completed'
-                        : o.add.canVote.toString() === '8'
-                        ? 'refunded'
-                        : o.add.canVote.toString() === '9'
-                        ? 'Unknown'
-                        : ''
-                    }`}
+                    label={Status[o.add.canVote.toNumber()]}
                     sx={{ mr: 1 }}
                   />
                   <Typography>{o.keyvalues?.title}</Typography>

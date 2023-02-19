@@ -17,7 +17,6 @@ import {
 import { useEffect, useState } from 'react'
 import { Alert, Checkbox } from '@mui/material'
 import Title from '../../components/common/Title'
-import { useNavigate } from 'react-router-dom'
 
 interface Inputs {
   title: string
@@ -48,7 +47,8 @@ interface ICreateCampaignForm {
 }
 
 const CampaignCreate = () => {
-  // * periods, amounts preset
+  const account = useRecoilValue(accountState)
+  const [checked, setChecked] = useState(false)
   const [periods, setPeriods] = useState<number[]>([0, 0, 0])
   const [amounts, setAmounts] = useState<number[]>([0, 0, 0])
 
@@ -57,22 +57,7 @@ const CampaignCreate = () => {
     getTargetAmounts().then((res) => setAmounts(res))
   }, [])
 
-  // * [api] addCampaign react query
-
-  // * metamask address
-  const account = useRecoilValue(accountState)
-  const [addressDefault, setAddressDefault] = useState('')
-  useEffect(() => {
-    console.log(account)
-
-    account !== '0x00' && setAddressDefault(account)
-  }, [account])
-  // * react hook form settings
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<Inputs>({
+  const { register, handleSubmit } = useForm<Inputs>({
     defaultValues: {
       title: '',
       description: '',
@@ -84,12 +69,8 @@ const CampaignCreate = () => {
       img3: undefined,
     },
   })
-  // * handle form submission
-  const navigate = useNavigate()
-  const onSubmit: SubmitHandler<Inputs> = async (data) => {
-    // * create formData
-    console.log(data)
 
+  const onSubmit: SubmitHandler<Inputs> = async (data) => {
     const formData = new FormData()
     formData.append('title', data.title)
     formData.append('description', data.description)
@@ -107,14 +88,9 @@ const CampaignCreate = () => {
           data.period,
           account,
           res.pinataKey
+        ).catch(() =>
+          cancelCampaign(res.pinataKey).then(console.log).catch(console.error)
         )
-          .then((res) => {
-            // navigate('/')
-            console.log(res)
-          })
-          .catch(() =>
-            cancelCampaign(res.pinataKey).then(console.log).catch(console.error)
-          )
       })
       .catch((err) => {
         alert(err)
@@ -197,15 +173,12 @@ const CampaignCreate = () => {
     },
   ]
 
-  const [checked, setChecked] = useState(false)
-
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCheckBox = (event: React.ChangeEvent<HTMLInputElement>) => {
     setChecked(event.target.checked)
   }
 
   return (
     <>
-      {/* img1 required */}
       <Title subTitle='Once you submit the form, the vote will proceed.'>
         Create Campaign
       </Title>
@@ -243,7 +216,7 @@ const CampaignCreate = () => {
             icon={
               <Checkbox
                 checked={checked}
-                onChange={handleChange}
+                onChange={handleCheckBox}
                 inputProps={{ 'aria-label': 'controlled' }}
               />
             }
