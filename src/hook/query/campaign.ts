@@ -1,8 +1,4 @@
-import {
-  addCampaign,
-  getMetadata,
-  getMetadataByName,
-} from '../../api/CampaignAPI'
+import { getMetadata, getMetadataByName } from '../../api/CampaignAPI'
 
 import { useQuery } from 'react-query'
 

@@ -127,7 +127,7 @@ const AutoPlaySwipeableViews = autoPlay(SwipeableViews)
 
 const CampaignDetail = () => {
   const { id } = useParams()
-  const [activeStep, setActiveStep] = useState(0)
+  const [activeStep, _] = useState(0)
   const [donation, setDonation] = useState<IConvertedDonation>()
   const theme = useTheme()
 
@@ -139,11 +139,7 @@ const CampaignDetail = () => {
     return data
   }, [data])
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<Inputs>({
+  const { register, handleSubmit } = useForm<Inputs>({
     defaultValues: {
       contents: '',
       img1: undefined,
@@ -169,7 +165,7 @@ const CampaignDetail = () => {
       status: rawVote.canVote.toNumber() + 1,
       createdAt: rawVote.createdTime.toString(),
       donateId: rawVote.donateId.toString(),
-      proposalId: rawVote.proposalId.toString(), // bignumber 이슈로 string으로 변경
+      proposalId: rawVote.proposalId.toString(),
       voteYes: rawVote.voteFor.toString(),
       voteNo: rawVote.voteAgainst.toString(),
       period: rawVote.period.toString(),
@@ -228,21 +224,6 @@ const CampaignDetail = () => {
         }
       }, 2000)
     }
-    // const amount = data.amount * 10 ** 6
-    // const delay = (time: number) => {
-    //   return new Promise((res) => setTimeout(res, time))
-    // }
-    // usdcContract.approve(VAULT_CA, amount).then(async () => {
-    //   for (let i = 0; i < 30; i++) {
-    //     const allowance = await usdcContract.allowance(account, VAULT_CA)
-    //     if (allowance.toString() >= amount) {
-    //       donate(donation!.add.donateId, amount)
-    //       return
-    //     } else {
-    //       await delay(1000)
-    //     }
-    //   }
-    // })
   }
 
   const onClickVote = (support: number) => {
@@ -293,7 +274,6 @@ const CampaignDetail = () => {
             {metadata ? metadata.title : ''}
           </Title>
 
-          {/* state 상관없이 제공할 기부 관련 데이터 */}
           <Box
             sx={{
               display: 'flex',
@@ -315,7 +295,6 @@ const CampaignDetail = () => {
                 autoPlay={false}
                 axis={theme.direction === 'rtl' ? 'x-reverse' : 'x'}
                 index={activeStep}
-                // onChangeIndex={handleStepChange}
                 enableMouseEvents
                 style={{
                   width: '300px',
