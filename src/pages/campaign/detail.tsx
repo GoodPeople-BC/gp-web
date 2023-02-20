@@ -42,7 +42,6 @@ import Title from '../../components/common/Title'
 import { IRawDonation, IRawVote } from '../../interfaces'
 import RemainingTime from '../../components/RemainingTime'
 import VotingTime from '../../components/VotingTime'
-import * as Big from 'bignumber.js'
 
 enum DonationStatus {
   False,
@@ -86,6 +85,11 @@ type Inputs = {
 
 type InputsKey = keyof Inputs
 
+interface IRadioValue {
+  label: string
+  value: string
+}
+
 interface IDetaileForm {
   name: InputsKey
   type: InputType
@@ -127,7 +131,7 @@ const AutoPlaySwipeableViews = autoPlay(SwipeableViews)
 
 const CampaignDetail = () => {
   const { id } = useParams()
-  const [activeStep, _] = useState(0)
+  const [activeStep, setActiveStep] = useState(0)
   const [donation, setDonation] = useState<IConvertedDonation>()
   const theme = useTheme()
 
@@ -139,7 +143,11 @@ const CampaignDetail = () => {
     return data
   }, [data])
 
-  const { register, handleSubmit } = useForm<Inputs>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<Inputs>({
     defaultValues: {
       contents: '',
       img1: undefined,
@@ -165,7 +173,7 @@ const CampaignDetail = () => {
       status: rawVote.canVote.toNumber() + 1,
       createdAt: rawVote.createdTime.toString(),
       donateId: rawVote.donateId.toString(),
-      proposalId: rawVote.proposalId.toString(),
+      proposalId: rawVote.proposalId.toString(), // bignumber 이슈로 string으로 변경
       voteYes: rawVote.voteFor.toString(),
       voteNo: rawVote.voteAgainst.toString(),
       period: rawVote.period.toString(),
@@ -201,29 +209,22 @@ const CampaignDetail = () => {
     const provider = new ethers.providers.Web3Provider(window.ethereum, 'any')
     const signer = provider.getSigner()
     const usdcContract = new Contract(USDC_CA, ERC20ABI, signer)
-    const amount = new Big.BigNumber(data.amount * 10 ** 6)
-    let allowance = new Big.BigNumber(0)
-    allowance = await usdcContract
-      .allowance(account, VAULT_CA)
-      .then((res: BigNumber) => {
-        return new Big.BigNumber(res.toString())
-      })
-    if (amount.comparedTo(allowance) !== 1) {
-      donate(donation!.add.donateId, Number(amount))
-    } else {
-      usdcContract.approve(VAULT_CA, Number(amount))
-      const timer = setInterval(async () => {
-        allowance = await usdcContract
-          .allowance(account, VAULT_CA)
-          .then((res: BigNumber) => {
-            return new Big.BigNumber(res.toString())
-          })
-        if (amount.comparedTo(allowance) !== 1) {
-          donate(donation!.add.donateId, Number(amount))
-          clearInterval(timer)
-        }
-      }, 2000)
+    const amount = data.amount * 10 ** 6
+    const delay = (time: number) => {
+      return new Promise((res) => setTimeout(res, time))
     }
+    usdcContract.approve(VAULT_CA, amount).then(async () => {
+      for (let i = 0; i < 30; i++) {
+        console.log('run')
+        const allowance = await usdcContract.allowance(account, VAULT_CA)
+        if (allowance.toString() >= amount) {
+          donate(donation!.add.donateId, amount)
+          return
+        } else {
+          await delay(1000)
+        }
+      }
+    })
   }
 
   const onClickVote = (support: number) => {
@@ -238,6 +239,8 @@ const CampaignDetail = () => {
     if (!donation?.add.proposalId) return
     getVotingBalance(donation?.add.proposalId, account).then(
       (res: BigNumber) => {
+        console.log(res)
+
         setVotingBalance(Number(res.toString()) / 10 ** 18)
       }
     )
@@ -245,6 +248,8 @@ const CampaignDetail = () => {
       setVoted(res)
     })
   }, [account, donation])
+
+  console.log(donation?.maxAmount, donation?.currentAmount)
 
   return (
     <>
@@ -274,6 +279,7 @@ const CampaignDetail = () => {
             {metadata ? metadata.title : ''}
           </Title>
 
+          {/* state 상관없이 제공할 기부 관련 데이터 */}
           <Box
             sx={{
               display: 'flex',
@@ -295,6 +301,7 @@ const CampaignDetail = () => {
                 autoPlay={false}
                 axis={theme.direction === 'rtl' ? 'x-reverse' : 'x'}
                 index={activeStep}
+                // onChangeIndex={handleStepChange}
                 enableMouseEvents
                 style={{
                   width: '300px',
@@ -511,31 +518,19 @@ const CampaignDetail = () => {
                   </Box>
                 )}
                 {donation.add.status === DonationStatus.DonateSucceeded && (
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                    }}
-                  >
+                  <>
                     <div>
                       Target donation amount has been achieved within the
                       period. Please press the button below to receive it.
                     </div>
-                    <div>
-                      As informed when creating the campaign, 10% of all
-                      donations go to Good People DAO as operating expenses.
-                    </div>
                     <Button
-                      sx={{ mt: 2 }}
-                      variant='contained'
                       onClick={() => {
                         claim(donation.add.donateId)
                       }}
                     >
                       Claim
                     </Button>
-                  </Box>
+                  </>
                 )}
                 {donation.add.status === DonationStatus.DonateComplete && (
                   <Box

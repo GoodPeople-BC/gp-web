@@ -6,7 +6,12 @@ import {
   Radio,
   RadioGroup,
 } from '@mui/material'
-import { FieldError, UseFormRegisterReturn } from 'react-hook-form'
+import {
+  FieldError,
+  FieldValues,
+  Path,
+  UseFormRegisterReturn,
+} from 'react-hook-form'
 
 interface BaseRadioGroupProps {
   register: UseFormRegisterReturn

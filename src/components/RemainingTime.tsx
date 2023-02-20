@@ -1,5 +1,5 @@
 import styled from '@emotion/styled'
-import { Typography } from '@mui/material'
+import { Box, Typography } from '@mui/material'
 import { useEffect, useState } from 'react'
 
 const RemainingTime = ({ end }: { end: number }) => {

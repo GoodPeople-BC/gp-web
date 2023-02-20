@@ -1,5 +1,6 @@
 import { css } from '@emotion/react'
 
+// 전역 스타일 입력
 const globalStyle = css`
   @import url('https://fonts.googleapis.com/css2?family=Pacifico&family=Titillium+Web:wght@200;400;600&display=swap');
 
