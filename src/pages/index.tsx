@@ -1,5 +1,5 @@
 import { useMetadata } from '../hook/query/campaign'
-import { Box, Button, Chip, Skeleton, Typography } from '@mui/material'
+import { Box, Button, Chip, Skeleton, Tooltip, Typography } from '@mui/material'
 import Grid2 from '@mui/material/Unstable_Grid2'
 import { Link } from 'react-router-dom'
 import { getDonationList } from '../api/contract/GPService'
@@ -98,9 +98,19 @@ const HomePage = () => {
     <>
       <Title
         rightSide={
-          <Button onClick={getGPT} variant='contained'>
-            Get 1GPT with 1USDC
-          </Button>
+          <Tooltip
+            title={
+              <Typography sx={{ px: 1, fontSize: 12 }}>
+                You can get 1 GPT for each donation of 1 USDC to Good People.
+              </Typography>
+            }
+            arrow
+            placement='top'
+          >
+            <Button onClick={getGPT} variant='contained'>
+              Get 1GPT with 1USDC
+            </Button>
+          </Tooltip>
         }
         subTitle='Vote for a campaign for a good donation culture. And donate to the campaign you want.'
       >

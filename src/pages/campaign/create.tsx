@@ -213,6 +213,7 @@ const CampaignCreate = () => {
             )
           )}
           <Alert
+            sx={{ mt: 2 }}
             icon={
               <Checkbox
                 checked={checked}
@@ -222,10 +223,10 @@ const CampaignCreate = () => {
             }
             severity='info'
           >
-            If you submit the form, the agenda will be registered for review,
-            and if you pass the governance vote, you will have to press the
-            button directly on the detail page to make it donationable, and if
-            you fail to pass the vote, the agenda will be deleted.
+            By submitting the form, the review vote on the agenda will begin.
+            After passing the governance vote, someone has to press the execute
+            button directly on the detail page to make donations. And 10% of all
+            donations go to Good People DAO as operating expenses.
           </Alert>
           <LoadingButton
             variant='contained'

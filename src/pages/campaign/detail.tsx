@@ -511,19 +511,31 @@ const CampaignDetail = () => {
                   </Box>
                 )}
                 {donation.add.status === DonationStatus.DonateSucceeded && (
-                  <>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                    }}
+                  >
                     <div>
                       Target donation amount has been achieved within the
                       period. Please press the button below to receive it.
                     </div>
+                    <div>
+                      As informed when creating the campaign, 10% of all
+                      donations go to Good People DAO as operating expenses.
+                    </div>
                     <Button
+                      sx={{ mt: 2 }}
+                      variant='contained'
                       onClick={() => {
                         claim(donation.add.donateId)
                       }}
                     >
                       Claim
                     </Button>
-                  </>
+                  </Box>
                 )}
                 {donation.add.status === DonationStatus.DonateComplete && (
                   <Box
