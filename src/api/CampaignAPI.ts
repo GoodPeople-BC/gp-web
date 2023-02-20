@@ -1,9 +1,5 @@
 import axios from 'axios'
-import {
-  IGetMetadataResp,
-  IGetMetadataByNameResp,
-  IAddCampaignResp,
-} from './interface'
+import { IGetMetadataResp, IGetMetadataByNameResp } from './interface'
 
 export interface IAddCampaign {
   title: string

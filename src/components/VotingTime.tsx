@@ -54,19 +54,3 @@ const VotingTime = ({
 }
 
 export default VotingTime
-
-const Container = styled.div`
-  border-radius: 10px;
-  padding: 15px 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-`
-
-const Span = styled.span`
-  padding: 4px 6px;
-  margin: 0 3px 0 5px;
-  border-radius: 10px;
-  background: black;
-  color: white;
-`

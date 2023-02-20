@@ -1,18 +1,16 @@
 export const doCopy = (text: string) => {
   if (navigator.clipboard) {
-    // 크롬 66버전 이상
     navigator.clipboard
       .writeText(text)
       .then(() => {
-        alert('클립보드에 복사되었습니다.')
+        alert('Copied to clipboard.')
       })
       .catch(() => {
-        alert('복사를 다시 시도해주세요.')
+        alert('Please try copying again.')
       })
   } else {
-    // copy 기능 사용이 어려운 경우 return
     if (!document.queryCommandSupported('copy')) {
-      return alert('복사하기가 지원되지 않는 브라우저입니다.')
+      return alert('This browser does not support copying.')
     }
     const textarea = document.createElement('textarea')
     textarea.value = text
@@ -25,6 +23,6 @@ export const doCopy = (text: string) => {
     textarea.select()
     document.execCommand('copy')
     document.body.removeChild(textarea)
-    alert('클립보드에 복사되었습니다.')
+    alert('Copied to clipboard.')
   }
 }
