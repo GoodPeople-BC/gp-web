@@ -16,6 +16,7 @@ import {
   InputAdornment,
   LinearProgress,
   linearProgressClasses,
+  MobileStepper,
   Skeleton,
   TextField,
   Typography,
@@ -127,7 +128,7 @@ const AutoPlaySwipeableViews = autoPlay(SwipeableViews)
 
 const CampaignDetail = () => {
   const { id } = useParams()
-  const [activeStep, _] = useState(0)
+  const [activeStep, setActiveStep] = useState(0)
   const [donation, setDonation] = useState<IConvertedDonation>()
   const theme = useTheme()
 
@@ -138,6 +139,10 @@ const CampaignDetail = () => {
   const metadata: IGetMetadataByNameResp | undefined = useMemo(() => {
     return data
   }, [data])
+
+  const handleStepChange = (step: number) => {
+    setActiveStep(step)
+  }
 
   const { register, handleSubmit } = useForm<Inputs>({
     defaultValues: {
@@ -290,35 +295,55 @@ const CampaignDetail = () => {
                 sx={{ borderRadius: 2 }}
               />
             ) : (
-              <AutoPlaySwipeableViews
-                interval={3000}
-                autoPlay={false}
-                axis={theme.direction === 'rtl' ? 'x-reverse' : 'x'}
-                index={activeStep}
-                enableMouseEvents
-                style={{
-                  width: '300px',
-                }}
-              >
-                {metadata &&
-                  metadata.imgs.map((o, index) => (
-                    <div key={index}>
-                      {Math.abs(activeStep - index) <= 2 ? (
-                        <Box
-                          component='img'
-                          src={o}
-                          sx={{
-                            backgroundSize: 'contain',
-                            backgroundPosition: 'center center',
-                            borderRadius: 2,
-                          }}
-                          width={300}
-                          height={300}
-                        />
-                      ) : null}
-                    </div>
-                  ))}
-              </AutoPlaySwipeableViews>
+              <>
+                {metadata.imgs.length > 1 ? (
+                  <AutoPlaySwipeableViews
+                    axis={theme.direction === 'rtl' ? 'x-reverse' : 'x'}
+                    index={activeStep}
+                    onChangeIndex={handleStepChange}
+                    enableMouseEvents
+                  >
+                    {metadata &&
+                      metadata.imgs.map((o, index) => (
+                        <div key={index}>
+                          {Math.abs(activeStep - index) <= 2 ? (
+                            <Box
+                              component='img'
+                              src={o}
+                              sx={{
+                                width: 300,
+                                height: 255,
+                                display: 'block',
+                                objectFit: 'cover',
+                                backgroundPosition: 'center center',
+                                borderRadius: 2,
+                                margin: '0 auto',
+                              }}
+                              width={300}
+                              height={300}
+                            />
+                          ) : null}
+                        </div>
+                      ))}
+                  </AutoPlaySwipeableViews>
+                ) : (
+                  <Box
+                    component='img'
+                    src={metadata.imgs[0]}
+                    sx={{
+                      width: 300,
+                      height: 255,
+                      display: 'block',
+                      objectFit: 'cover',
+                      backgroundPosition: 'center center',
+                      borderRadius: 2,
+                      margin: '0 auto',
+                    }}
+                    width={300}
+                    height={300}
+                  />
+                )}{' '}
+              </>
             )}
             <Box sx={{ my: 2 }}>
               <Box width={300} sx={{ m: '0 auto', mb: 2 }}>
@@ -554,22 +579,25 @@ const CampaignDetail = () => {
                         justifyContent: 'center',
                       }}
                     >
-                      <Typography sx={{ mb: 1 }}>
+                      <Typography sx={{ mb: 3 }}>
                         The donation was successfully completed and the
-                        recipient received the donation.
+                        recipient received the donation. You can view the
+                        reviews posted by the recipient.
                       </Typography>
                       {metadata?.reviewContents && (
-                        <Box sx={{ display: 'flex', margin: '0 auto' }}>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                          }}
+                        >
                           <AutoPlaySwipeableViews
-                            interval={3000}
-                            autoPlay={false}
                             axis={theme.direction === 'rtl' ? 'x-reverse' : 'x'}
                             index={activeStep}
+                            onChangeIndex={handleStepChange}
                             enableMouseEvents
-                            style={{
-                              width: '250px',
-                              marginRight: '10px',
-                            }}
                           >
                             {metadata?.reviewImgs &&
                               metadata.reviewImgs.map((o, index) => (
@@ -579,12 +607,14 @@ const CampaignDetail = () => {
                                       component='img'
                                       src={o}
                                       sx={{
-                                        backgroundSize: 'contain',
+                                        width: 300,
+                                        height: 255,
+                                        display: 'block',
+                                        objectFit: 'cover',
                                         backgroundPosition: 'center center',
                                         borderRadius: 2,
+                                        margin: '0 auto',
                                       }}
-                                      width={250}
-                                      height={250}
                                     />
                                   ) : null}
                                 </div>
